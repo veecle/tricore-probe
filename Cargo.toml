@@ -1,0 +1,51 @@
+[package]
+name = "tricore-probe"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.69"
+serde = "1.0"
+clap = { version = "4.1.4", features = ["derive"] }
+log = "0.4.17"
+tempfile = "3.3.0"
+env_logger = "0.10.0"
+ihex = "3.0.0"
+elf = "0.7.1"
+colored = "2.0.0"
+cfg-if = "1.0.0"
+tricore-common = { path = "tricore-common" }
+
+tricore-windows = { path = "tricore-windows", optional = true}
+
+tricore-docker = { path = "tricore-docker", optional = true}
+
+[dependencies.serde_json]
+version = "1.0.93"
+
+[dependencies.defmt-json-schema]
+version = "0.1.0"
+
+[features]
+# These features define whether a virtualized docker setup should be used as the
+# chip interface or if (when building on windows) no indirection is needed.
+windows = ["dep:tricore-windows"]
+docker = ["dep:tricore-docker"]
+
+default = ["windows"]
+
+[workspace]
+members = [
+    "rust-mcd",
+    "tricore-windows",
+    "tricore-common",
+    "tricore-docker",
+    "tricore-docker/win-daemon",
+    "tricore-docker/win-ftd2xx-dll",
+    "tricore-docker/rpc-api",
+    "tricore-docker/native",
+    "tricore-docker/ftd-api",
+    "tricore-docker/dll-export",
+]

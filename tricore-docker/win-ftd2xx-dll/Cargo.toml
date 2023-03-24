@@ -1,0 +1,22 @@
+[package]
+name = "ftd2xx"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type=["cdylib"]
+
+[dependencies]
+winapi = "0.3.9"
+ftd-api = { path = "../ftd-api" }
+rpc-api = { path = "../rpc-api" }
+ciborium = "0.2.0"
+serde = "1.0.152"
+anyhow = "1.0.69"
+dll-export = { path = "../dll-export" }
+log = { version = "0.4.0", features = ["std"] }
+
+[features]
+default = ["export"]
+
+export = []

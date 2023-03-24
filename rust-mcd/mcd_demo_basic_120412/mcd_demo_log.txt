@@ -1,0 +1,189 @@
+mcd_demo_main.cpp 2012-04-10
+
+The following log was recorded for two devices connected:
+- XMC4500 via miniWiggler
+- TC2Dx on TriBoard
+
+CPU0 of TC2Dx is selected and several actions are done:
+ - Reset and halt
+ - The PC is modified by writing to its address (0xF881FE08)
+ - Single stepping and breakpoints
+ - 8 kB CPU memory is read unaligend and beyond borders
+ - DAP frequency is changed to maximum possible (30 MHz)
+ - USB cable to Triboard is unplugged and plugged again
+
+The program RAM at 0xC0000000 contains preloaded code.
+
+
+START OF LOG - START OF LOG - START OF LOG - START OF LOG - START OF LOG
+
+
+Enter name of MCD API lib (0 for mcdxdas.dll):
+0
+
+MCD Implementation Info
+  Vendor:      Infineon Technologies
+  Version:     1.4.0
+  API version: 1.1
+  Date:        Apr  9 2012
+
+
+Enter IP address of server host (0 for localhost):
+0
+
+
+Enter system key (0 for none):
+0
+
+Running Servers
+0: UDAS, Access HW: DAS JDS miniWiggler JTAG/DAP/SPD V2 MWSB9GGXA
+1: UDAS, Access HW: DAS JDS TriBoard TC2X5 V1.0 TBUPF2NCA
+
+
+Enter server index (0...1):
+0
+
+Enter 0 to open only the selected Access HW server:
+1
+
+Open Servers
+
+McdHostName="localhost"
+McdServerName="UDAS"
+McdExitIfLastClient=true
+McdAccHw="DAS JDS miniWiggler JTAG/DAP/SPD V2 MWSB9GGXA"
+McdAccHw.AutoDetect=true
+McdAccHw.DeviceId=0x101DB083
+McdAccHw.Device="XMC4000-Family"
+McdAccHw.Frequency=400000
+McdAccHw.PostRstDelay=700
+
+McdHostName="localhost"
+McdServerName="UDAS"
+McdExitIfLastClient=true
+McdAccHw="DAS JDS TriBoard TC2X5 V1.0 TBUPF2NCA"
+McdAccHw.AutoDetect=true
+McdAccHw.DeviceId=0x101DA083
+McdAccHw.Device="TriCore-Family"
+McdAccHw.Frequency=30000000
+McdAccHw.PostRstDelay=400
+
+
+SYSTEM LEVEL ##################################################################
+Found 1 systems on host localhost
+
+MCD Core Connection Info
+system:      Real HW
+
+
+DEVICE LEVEL ##################################################################
+Found 2 devices within system Real HW
+
+MCD Core Connection Info
+host:        localhost
+server_port: 61166
+system:      Real HW
+acc_hw:      DAS JDS miniWiggler JTAG/DAP/SPD V2 MWSB9GGXA
+device_type: 0x101DB083
+device:      XMC4000-Family
+
+MCD Core Connection Info
+host:        localhost
+server_port: 61166
+system:      Real HW
+acc_hw:      DAS JDS TriBoard TC2X5 V1.0 TBUPF2NCA
+device_type: 0x101DA083
+device:      TriCore-Family
+device_id:   0x00000001
+
+
+Enter device index (0...1):
+1
+
+CORE LEVEL ####################################################################
+Found 3 cores within device TriCore-Family
+
+MCD Core Connection Info
+host:        localhost
+server_port: 61166
+system:      Real HW
+acc_hw:      DAS JDS TriBoard TC2X5 V1.0 TBUPF2NCA
+device_type: 0x101DA083
+device:      TriCore-Family
+device_id:   0x00000001
+core:        Core 0: CPU0 TriCore 1.6E
+core_type:   44
+core_id:     0x00B7C000
+
+MCD Core Connection Info
+host:        localhost
+server_port: 61166
+system:      Real HW
+acc_hw:      DAS JDS TriBoard TC2X5 V1.0 TBUPF2NCA
+device_type: 0x101DA083
+device:      TriCore-Family
+device_id:   0x00000001
+core:        Core 1: CPU1 TriCore 1.6E
+core_type:   44
+core_id:     0x00B7C000
+
+MCD Core Connection Info
+host:        localhost
+server_port: 61166
+system:      Real HW
+acc_hw:      DAS JDS TriBoard TC2X5 V1.0 TBUPF2NCA
+device_type: 0x101DA083
+device:      TriCore-Family
+device_id:   0x00000001
+core:        Core 2: CPU2 TriCore 1.6P
+core_type:   44
+core_id:     0x00C0C010
+
+
+Enter core index (0...2):
+0
+
+
+Control core:         run, stop, step <steps>
+Reset (and Halt):     rst, rsthlt
+Read 32 bit word:     read <addr>
+Read N bytes:         read <addr> <n_bytes>
+Write 32 bit word:    write <addr> <value>
+Set IP breakpoint:    bpt <addr>
+Clear IP breakpoint:  bpt
+Query state:          s
+Access HW frequency:  frequ <f_hz>
+Exit:                 exit
+
+IP 0xA0000160 State Running  Enter command: rsthlt
+IP 0xA0000020 State Debug    Enter command: write 0xF881FE08 0xC0000000
+IP 0xC0000000 State Debug    Enter command: step
+IP 0xC0000002 State Debug    Enter command: read 0xF881FE08
+Read value: 0xC0000002
+IP 0xC0000002 State Debug    Enter command: step 3
+IP 0xC0000008 State Debug    Enter command: bpt 0xC0000020
+IP 0xC0000008 State Debug    Enter command: run
+IP 0xC0000020 State Debug    Enter command: step
+IP 0xC0000022 State Debug    Enter command: s
+IP 0xC0000022 State Debug    Enter command: read 0xC0000000 8192
+Read 8192 byte
+IP 0xC0000022 State Debug    Enter command: read 0xC0000000 8193
+Read 8192 byte
+ERROR: Read failure for a transaction of the txlist
+IP 0xC0000022 State Debug    Enter command: read 0xC0000001 8192
+Read 8191 byte
+ERROR: Read failure for a transaction of the txlist
+IP 0xC0000022 State Debug    Enter command: frequ 50000000
+Frequency set to 30000 kHz
+IP 0xC0000022 State Debug    Enter command: read 0xC0000000 8192
+Read 8192 byte
+IP 0xC0000022 State Debug    Enter command: run
+IP 0xA0000160 State Running  Enter command: stop
+IP 0xA0000160 State Debug    Enter command: read 0xc0000000
+ERROR: Connection lost to DAS JDS TriBoard TC2X5 V1.0 TBUPF2NCA
+Read value: 0xEEEEEEEE
+ERROR: Device not (anymore) connected to DAS Server
+IP 0xEEEEEEEE State Unknown  Enter command: read 0xc0000000
+Core successfully reconnected
+IP 0xA0000160 State Running  Enter command: rsthlt
+IP 0xA0000020 State Debug    Enter command: exit

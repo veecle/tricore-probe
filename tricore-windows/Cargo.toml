@@ -1,0 +1,18 @@
+[package]
+name = "tricore-windows"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.69"
+clap = { version = "4.1.4", features = ["derive"] }
+log = "0.4.17"
+tempfile = "3.3.0"
+byteorder = "1.4.3"
+rust-mcd = { path = "../rust-mcd" }
+tricore-common = { path = "../tricore-common" }
+
+[build-dependencies]
+bindgen = "0.64.0"
