@@ -9,7 +9,6 @@ pub mod backtrace;
 pub trait Chip: Sized {
     /// Required configuration for connecting to a chip
     type Config: clap::Args;
-
     /// Connect to a chip given the required configuration
     fn new(config: Self::Config) -> anyhow::Result<Self>;
 

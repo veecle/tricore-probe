@@ -5,7 +5,15 @@ use crate::elf::elf_to_hex;
 pub use imp::Config;
 use tricore_common::{backtrace::BackTrace, Chip};
 
-use tricore_windows as imp;
+cfg_if::cfg_if! {
+    if #[cfg(feature = "docker")] {
+        use tricore_docker as imp;
+    } else if #[cfg(feature = "windows")] {
+        use tricore_windows as imp;
+    } else {
+        compile_error!("Features 'docker' and 'windows' are mutually exclusive")
+    }
+}
 
 pub type ChipInterface = ChipInterfaceImpl<imp::ChipInterface>;
 

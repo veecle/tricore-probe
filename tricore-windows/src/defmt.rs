@@ -35,7 +35,6 @@ pub fn decode_rtt<W: Write>(
     // is changed and then wait for the chip to hit the breakpoint.
     let breakpoint_on_write_change =
         core.create_breakpoint(TriggerType::RW, rtt_block.device_write_index_addr(), 4)?;
-
     core.download_triggers();
     core.run()?;
 

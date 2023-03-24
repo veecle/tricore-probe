@@ -1,0 +1,17 @@
+[package]
+name = "win-daemon"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tricore-windows = { path = "../../tricore-windows" }
+tricore-common = { path = "../../tricore-common" }
+rpc-api = { path = "../rpc-api" }
+anyhow = "1.0.69"
+log = "0.4.17"
+clap = { version = "4.1.4", features = ["derive"] }
+env_logger = "0.10.0"
+ciborium = "0.2.0"
+ctrlc = "3.2.5"

@@ -18,7 +18,6 @@ pub fn elf_to_hex(data: &[u8]) -> anyhow::Result<String> {
 
     input_file.write_all(data).unwrap();
     input_file.flush().unwrap();
-
     let output_file = temporary_directory.path().join("output.hex");
 
     let mut command = Command::new("objcopy");
