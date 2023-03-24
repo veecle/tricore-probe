@@ -1,0 +1,33 @@
+[package]
+name = "tricore-probe"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.69"
+serde = "1.0"
+clap = { version = "4.1.4", features = ["derive"] }
+log = "0.4.17"
+tempfile = "3.3.0"
+env_logger = "0.10.0"
+ihex = "3.0.0"
+elf = "0.7.1"
+colored = "2.0.0"
+tricore-common = { path = "tricore-common" }
+
+tricore-windows = { path = "tricore-windows" }
+
+[dependencies.serde_json]
+version = "1.0.93"
+
+[dependencies.defmt-json-schema]
+version = "0.1.0"
+
+[workspace]
+members = [
+    "rust-mcd",
+    "tricore-windows",
+    "tricore-common",
+]

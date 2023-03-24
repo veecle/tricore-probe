@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Support">
+      <UniqueIdentifier>{80cad1f3-0c44-4851-add6-35cc850deb9d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\mcd_loader_class\mcd_loader_class.cpp">
+      <Filter>Support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\mcd_tools.cpp">
+      <Filter>Support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\mcd_demo_main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\mcd_api.h">
+      <Filter>Support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\mcd_types.h">
+      <Filter>Support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\mcd_loader_class\mcd_lc_basic.h">
+      <Filter>Support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\mcd_loader_class\mcd_lc_templates.h">
+      <Filter>Support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\mcd_loader_class\mcd_lc_utilities.h">
+      <Filter>Support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\mcd_loader_class\mcd_loader_class.h">
+      <Filter>Support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\mcd_tools.h">
+      <Filter>Support</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
