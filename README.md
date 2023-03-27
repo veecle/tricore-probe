@@ -33,5 +33,5 @@ message.
 configured as the default settings in the `Memtool` application.
 2. Memtool and DAS are only available on windows. This is a big problem since we at Veecle
 require a working linux version. We thus created a dockerized setup that allows 
-us to use these tools in linux with little overhead. Check [tricore-docker/Readme.md](tricore-docker/Readme.md)
+us to use these tools in linux with little overhead. Check [tricore-docker/README.md](tricore-docker/Readme.md)
 for more information.
