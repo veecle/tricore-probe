@@ -29,8 +29,9 @@ This application is still in development and has some known drawbacks. If you
 find something that is not listed here, feel free to open an issue or leave us a
 message.
 
-1. This tool only works in windows. This is a big problem since we at Veecle
-require a working linux version. Check the `linux-docker` branch for a dockerized
-setup to provide the same functionality on linux.
-2. For flashing to work seemlessly the chip you are trying to flash should be 
+1. For flashing to work seemlessly the chip you are trying to flash should be 
 configured as the default settings in the `Memtool` application.
+2. Memtool and DAS are only available on windows. This is a big problem since we at Veecle
+require a working linux version. We thus created a dockerized setup that allows 
+us to use these tools in linux with little overhead. Check [tricore-docker/Readme.md](tricore-docker/Readme.md)
+for more information.

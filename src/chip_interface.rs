@@ -3,7 +3,7 @@ use std::{fs, io::Write, path::Path};
 use crate::elf::elf_to_hex;
 
 pub use imp::Config;
-use tricore_common::{backtrace::BackTrace, Chip};
+use tricore_common::{backtrace::Stacktrace, Chip};
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "docker")] {
@@ -44,7 +44,7 @@ impl<C: Chip> ChipInterfaceImpl<C> {
         &self,
         rtt_control_block_address: u64,
         decoder: W,
-    ) -> anyhow::Result<BackTrace> {
+    ) -> anyhow::Result<Stacktrace> {
         self.implementation
             .read_rtt(rtt_control_block_address, decoder)
     }

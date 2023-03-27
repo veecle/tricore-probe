@@ -27,5 +27,5 @@ pub trait Chip: Sized {
         &self,
         rtt_control_block_address: u64,
         decoder: W,
-    ) -> anyhow::Result<backtrace::BackTrace>;
+    ) -> anyhow::Result<backtrace::Stacktrace>;
 }

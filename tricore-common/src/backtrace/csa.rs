@@ -1,5 +1,11 @@
+//! This module defines structure for CSA's.
+//! 
+//! See also https://www.infineon.com/dgdl/tc1_6__architecture_vol1.pdf?fileId=db3a3043372d5cc801373b0f374d5d67#G8.6699641
 use super::pcxi::PCXI;
 
+/// A link word that points to a CSA
+/// 
+/// See https://www.infineon.com/dgdl/tc1_6__architecture_vol1.pdf?fileId=db3a3043372d5cc801373b0f374d5d67#G8.6699687
 #[derive(Debug, Clone, Copy)]
 pub struct ContextLinkWord {
     pub segment_address: u8,
@@ -8,11 +14,13 @@ pub struct ContextLinkWord {
 }
 
 impl ContextLinkWord {
+    /// The effective address of the CSA segment
     pub fn get_context_address(&self) -> u32 {
         ((self.segment_address as u32) << 28) + ((self.context_offset as u32) << 6)
     }
 }
 
+/// A saved context
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum SavedContext {
@@ -21,6 +29,10 @@ pub enum SavedContext {
 }
 
 impl SavedContext {
+    /// The [PCXI] register value stored in this context
+    /// 
+    /// This function is available on the type itself since both the upper context as well
+    /// as the lower context hold a stored pcxi register
     pub fn pcxi(&self) -> PCXI {
         match self {
             SavedContext::Upper(c) => c.pcxi,
@@ -28,6 +40,9 @@ impl SavedContext {
         }
     }
 
+    /// The return address stored in this context
+    /// 
+    /// Useful for providing additional information like the source address
     pub fn return_address(&self) -> u32 {
         match self {
             SavedContext::Upper(c) => c.a11,

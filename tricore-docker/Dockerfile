@@ -27,4 +27,7 @@ COPY ["artifacts/win-daemon.exe", "."]
 
 ENV WINEDEBUG="-all"
 
+ARG AGREE_INFINEON_TERMS=0
+RUN if [ "${AGREE_INFINEON_TERMS}" -ne "1" ]; then echo "This installation ships a Infineon Memtool and DAS installation. Agree with these conditions by setting environment variabl AGREE_INFINEON_TERMS to 1" && exit 1; fi
+
 CMD ["bash"]

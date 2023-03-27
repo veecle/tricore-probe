@@ -6,9 +6,9 @@ use rust_mcd::{
     reset::ResetClass,
 };
 use std::io::Write;
-use tricore_common::backtrace::BackTrace;
+use tricore_common::backtrace::Stacktrace;
 
-use crate::backtrace::BackTraceExt;
+use crate::backtrace::StacktraceExt;
 
 /// Decode the rtt data from the first channel of the specified rtt block and
 /// write it to the supplied data sink.
@@ -131,7 +131,7 @@ pub fn decode_rtt<W: Write>(
             let core_state = core.query_state()?;
             if core_state.state != CoreState::Running {
                 log::trace!("Device halted, attempting to acquire backtrace");
-                let backtrace = BackTrace::read_current(core)
+                let backtrace = Stacktrace::read_current(core)
                     .with_context(|| "Cannot read backtrace from device")?;
                 return Ok(HaltReason::DebugHit(backtrace));
             }
@@ -142,7 +142,7 @@ pub fn decode_rtt<W: Write>(
 /// Reason why decoding rtt data failed
 #[derive(Debug)]
 pub enum HaltReason {
-    DebugHit(BackTrace),
+    DebugHit(Stacktrace),
 }
 
 /// Helper structure to facilitate reading at the correct offsets within

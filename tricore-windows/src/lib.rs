@@ -5,13 +5,13 @@ use std::io::Write;
 use defmt::{decode_rtt, HaltReason};
 use flash::MemtoolUpload;
 use rust_mcd::{reset::ResetClass, system::System};
-use server::run_console;
-use tricore_common::{backtrace::BackTrace, Chip};
+use das::run_console;
+use tricore_common::{backtrace::Stacktrace, Chip};
 
 mod backtrace;
 pub mod defmt;
 pub mod flash;
-pub mod server;
+pub mod das;
 
 #[derive(clap::Args, Debug)]
 pub struct Config;
@@ -38,7 +38,7 @@ impl Chip for ChipInterface {
         &self,
         rtt_control_block_address: u64,
         decoder: W,
-    ) -> anyhow::Result<BackTrace> {
+    ) -> anyhow::Result<Stacktrace> {
         rust_mcd::library::init();
         let system = System::connect()?;
         let mut core = system.get_first_core()?;

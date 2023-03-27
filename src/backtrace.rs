@@ -7,7 +7,7 @@ use std::{
 use anyhow::Context;
 use colored::{Color, Colorize};
 use elf::{endian::AnyEndian, ElfBytes};
-use tricore_common::backtrace::{csa::SavedContext, BackTrace};
+use tricore_common::backtrace::{csa::SavedContext, Stacktrace};
 
 pub struct BackTraceInfo {
     stack_frames: Vec<StackFrameInfo>,
@@ -25,7 +25,7 @@ pub trait ParseInfo {
     fn addr2line(&self, elf_file: &Path) -> anyhow::Result<BackTraceInfo>;
 }
 
-impl ParseInfo for BackTrace {
+impl ParseInfo for Stacktrace {
     fn addr2line(&self, elf_file: &Path) -> anyhow::Result<BackTraceInfo> {
         let mut registry = Addr2LineRegistry::new(elf_file);
         let trap_metadata = TrapMetadata::from_elf(elf_file)?;

@@ -1,19 +1,25 @@
+//! This module defines structures to create a backtrace using the [rust_mcd] library
+
 use anyhow::{Context, Ok};
 use rust_mcd::core::Core;
-use tricore_common::backtrace::{csa::UpperContext, BackTrace};
+use tricore_common::backtrace::{csa::UpperContext, Stacktrace};
 
 use crate::backtrace::pcxi::PCXIExt;
 
 mod csa;
 mod pcxi;
 
-pub trait BackTraceExt: Sized {
-    fn read_current(core: &Core) -> anyhow::Result<Self>;
+/// Extension trait to obtain a stacktrace
+pub trait StacktraceExt: Sized {
+    /// Read the stacktrace for the given core
+    /// 
+    /// This function is available on the [Core] type.
+    fn read_current(&self) -> anyhow::Result<Stacktrace>;
 }
 
-impl BackTraceExt for BackTrace {
-    fn read_current(core: &Core) -> anyhow::Result<Self> {
-        let groups = core.register_groups()?;
+impl<'a> StacktraceExt for &'a Core<'a> {
+    fn read_current(&self) -> anyhow::Result<Stacktrace> {
+        let groups = self.register_groups()?;
         let group = groups.get_group(0)?;
 
         let register = |name: &str| {
@@ -47,9 +53,9 @@ impl BackTraceExt for BackTrace {
 
         let current_pc = register("PC")?;
 
-        let stack_frames = current_upper.pcxi.walk_context(core).collect();
+        let stack_frames = current_upper.pcxi.walk_context(self).collect();
 
-        Ok(BackTrace {
+        Ok(Stacktrace {
             stack_frames,
             current_pc,
             current_upper,

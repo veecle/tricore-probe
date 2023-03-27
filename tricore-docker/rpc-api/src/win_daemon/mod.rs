@@ -3,7 +3,7 @@ use std::fmt::Debug;
 pub mod log;
 
 use serde::{Deserialize, Serialize};
-use tricore_common::backtrace::BackTrace;
+use tricore_common::backtrace::Stacktrace;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub enum Commands {
@@ -33,7 +33,7 @@ pub enum Response {
     Error,
     Log(String),
     DefmtData(Vec<u8>),
-    StackFrame(BackTrace),
+    StackFrame(Stacktrace),
 }
 
 

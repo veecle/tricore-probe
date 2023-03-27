@@ -4,7 +4,7 @@ use anyhow::Context;
 use clap::Args;
 
 use rpc_api::win_daemon::{Commands, Response, WriteHex};
-use tricore_common::{backtrace::BackTrace, Chip};
+use tricore_common::{backtrace::Stacktrace, Chip};
 
 use self::{daemon::VirtualizedDaemon, pipe::DuplexPipeConnection, ftdi::FTDIClient};
 
@@ -72,7 +72,7 @@ impl Chip for ChipInterface {
         &self,
         rtt_control_block: u64,
         mut decoder: W,
-    ) -> anyhow::Result<BackTrace> {
+    ) -> anyhow::Result<Stacktrace> {
         let result = self.send_request(Commands::DefmtData {
             address: rtt_control_block,
         })?;
