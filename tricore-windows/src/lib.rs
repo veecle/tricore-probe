@@ -2,8 +2,8 @@
 
 use std::io::Write;
 
-use defmt::{run_defmt, HaltReason};
-use flash::FlashUpload;
+use defmt::{decode_rtt, HaltReason};
+use flash::MemtoolUpload;
 use rust_mcd::{reset::ResetClass, system::System};
 use server::run_console;
 use tricore_common::{backtrace::BackTrace, Chip};
@@ -28,7 +28,7 @@ impl Chip for ChipInterface {
     }
 
     fn flash_hex(&self, ihex: String, halt_memtool: bool) -> anyhow::Result<()> {
-        let mut upload = FlashUpload::start(ihex, halt_memtool)?;
+        let mut upload = MemtoolUpload::start(ihex, halt_memtool)?;
         upload.wait();
 
         Ok(())
@@ -43,7 +43,7 @@ impl Chip for ChipInterface {
         let system = System::connect()?;
         let mut core = system.get_first_core()?;
         let HaltReason::DebugHit(halt_reason) =
-            run_defmt(&mut core, rtt_control_block_address, decoder)?;
+            decode_rtt(&mut core, rtt_control_block_address, decoder)?;
         Ok(halt_reason)
     }
 }

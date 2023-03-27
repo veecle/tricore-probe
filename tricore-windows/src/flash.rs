@@ -7,12 +7,22 @@ use std::{
 use anyhow::Context;
 use tempfile::TempDir;
 
-pub struct FlashUpload {
+/// Models an upload of a binary with Memtool
+pub struct MemtoolUpload {
     spawned: Child,
     _temporary_files: TempDir,
 }
 
-impl FlashUpload {
+impl MemtoolUpload {
+    /// Upload a binary to the default device in Memtool
+    ///
+    /// This function assumes that memtool has a default configuration for the
+    /// target chip already set up. It uses Memtool's batch functionality to
+    /// instruct the program to flash all available sections to the device.
+    ///
+    /// For the created operation to succeed successfully, a DAS instance must
+    /// be already spawned with the expected device connected and the binary must
+    /// not contain unflashable sections.
     pub fn start(ihex: String, halt_memtool: bool) -> anyhow::Result<Self> {
         let temporary_files = TempDir::new().unwrap();
 
@@ -34,24 +44,27 @@ impl FlashUpload {
         batch_file.write_all(mtb.as_bytes()).unwrap();
         batch_file.flush().unwrap();
 
-        let mut process = Command::new(env!("MEMTOOL_PATH"));
+        let mut process = Command::new(env!("MEMTOOL_PATH")); // MEMTOOL_PATH is checked in the build.rs
+
         let process = process.arg("batch.mtb").current_dir(temporary_files.path());
         let spawned = process
             .spawn()
             .with_context(|| "Could not start memtool to flash device")?;
         log::info!("Spawned Infineon Memtool to flash hex file");
 
-        Ok(FlashUpload {
+        Ok(MemtoolUpload {
             spawned,
             _temporary_files: temporary_files,
         })
     }
 
+    /// Wait on the process to finish
+    ///
+    /// This can take a second, but if the tool fails execution it will hang here.
+    /// This can happen when the flash layout is broken or when another debugger
+    /// is already attached. The problem can only really be debugged with the GUI
+    /// or solved by implementing reading the logs from Memtool.
     pub fn wait(&mut self) {
-        // Waiting on the process can take a second, but if the tool fails execution it will hang here.
-        // This can happen when the flash layout is broken or when another debugger attached.
-        // The problem can only really be debugged with the GUI or by implementing reading the logs from
-        // the tool
         let output = self
             .spawned
             .wait()
