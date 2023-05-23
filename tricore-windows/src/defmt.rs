@@ -1,3 +1,4 @@
+use crate::backtrace::StacktraceExt;
 use anyhow::{bail, Context};
 use byteorder::ReadBytesExt;
 use rust_mcd::{
@@ -7,8 +8,6 @@ use rust_mcd::{
 };
 use std::io::Write;
 use tricore_common::backtrace::Stacktrace;
-
-use crate::backtrace::StacktraceExt;
 
 /// Decode the rtt data from the first channel of the specified rtt block and
 /// write it to the supplied data sink.
@@ -131,7 +130,8 @@ pub fn decode_rtt<W: Write>(
             let core_state = core.query_state()?;
             if core_state.state != CoreState::Running {
                 log::trace!("Device halted, attempting to acquire backtrace");
-                let backtrace = Stacktrace::read_current(core)
+                let backtrace = (&*core)
+                    .read_current()
                     .with_context(|| "Cannot read backtrace from device")?;
                 return Ok(HaltReason::DebugHit(backtrace));
             }
