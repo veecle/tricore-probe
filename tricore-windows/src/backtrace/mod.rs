@@ -12,7 +12,7 @@ mod pcxi;
 /// Extension trait to obtain a stacktrace
 pub trait StacktraceExt: Sized {
     /// Read the stacktrace for the given core
-    /// 
+    ///
     /// This function is available on the [Core] type.
     fn read_current(&self) -> anyhow::Result<Stacktrace>;
 }

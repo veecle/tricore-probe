@@ -6,7 +6,7 @@ use clap::Args;
 use rpc_api::win_daemon::{Commands, Response, WriteHex};
 use tricore_common::{backtrace::Stacktrace, Chip};
 
-use self::{daemon::VirtualizedDaemon, pipe::DuplexPipeConnection, ftdi::FTDIClient};
+use self::{daemon::VirtualizedDaemon, ftdi::FTDIClient, pipe::DuplexPipeConnection};
 
 pub type Config = DockerConfig;
 
@@ -110,7 +110,7 @@ impl ChipInterface {
     fn next_response(&self) -> anyhow::Result<Response> {
         let r = ciborium::de::from_reader(self.server.from().open())
             .with_context(|| "Failed to obtain response from docker")?;
-        
+
         Ok(r)
     }
 }

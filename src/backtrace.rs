@@ -245,7 +245,7 @@ impl TrapMetadata {
 
     /// Based on the metadata in this structure, attempt to identify the trap
     /// class based on the given address
-    /// 
+    ///
     /// This address is usually the program counter of the program when it hit the trap.
     fn trap_class(&self, address: u32) -> Option<u8> {
         let offset_from_start = address.checked_sub(self.trap_symbol?)?;

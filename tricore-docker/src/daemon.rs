@@ -4,7 +4,8 @@ use crate::builder::DockerBuilder;
 
 use super::{
     builder::{DockerInstance, Spawned},
-    logger, pipe::{DuplexPipeConnection, Pipe},
+    logger,
+    pipe::{DuplexPipeConnection, Pipe},
 };
 
 pub struct VirtualizedDaemon {

@@ -36,7 +36,6 @@ pub enum Response {
     StackFrame(Stacktrace),
 }
 
-
 pub enum Error {
     Internal,
 }
