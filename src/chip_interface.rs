@@ -11,7 +11,7 @@ cfg_if::cfg_if! {
     } else if #[cfg(feature = "windows")] {
         use tricore_windows as imp;
     } else {
-        compile_error!("Features 'docker' and 'windows' are mutually exclusive")
+        compile_error!("Features 'docker' and 'windows' are mutually exclusive");
     }
 }
 
