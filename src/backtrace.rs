@@ -28,7 +28,7 @@ pub trait ParseInfo {
 impl ParseInfo for Stacktrace {
     fn addr2line(&self, elf_file: &Path) -> anyhow::Result<BackTraceInfo> {
         let mut registry = Addr2LineRegistry::new(elf_file);
-        let trap_metadata = TrapMetadata::from_elf(elf_file)?;
+        let trap_metadata = TrapMetadata::from_elf(elf_file).unwrap_or(TrapMetadata::empty());
 
         registry.load(
             self.stack_frames
@@ -188,14 +188,18 @@ impl<'a> Addr2LineRegistry<'a> {
     }
 }
 
+/// Captures information about the currently installed trap tables
 struct TrapMetadata {
-    trap_symbol: u32,
+    /// This field will contain the base address of the trap table if one was found
+    trap_symbol: Option<u32>,
 }
 
 impl TrapMetadata {
-    /// Check for the first_trap_table symbol to infer trap information from PC
+    /// Extract information about available trap tables from the given elf file
+    ///
+    /// If this function call fails, [TrapMetadata::empty] may be used to create
+    /// a stub variant of this structure.
     fn from_elf(elf_file: &Path) -> anyhow::Result<Self> {
-        // first_trap_table
         let elf_data = std::fs::read(elf_file).unwrap();
         let elf = ElfBytes::<'_, AnyEndian>::minimal_parse(&elf_data).unwrap();
 
@@ -204,6 +208,8 @@ impl TrapMetadata {
             .with_context(|| "Could not parse symbol table from elf file")?
             .with_context(|| "Elf file does not have symbol table")?;
 
+        const VALID_SYMBOLS: &[&str] = &["first_trap_table", "BSP_TRAP_VECTOR_TABLE"];
+
         let trap_symbol = symbols
             .iter()
             .find_map(|symbol| {
@@ -211,21 +217,38 @@ impl TrapMetadata {
                     return None
                 };
 
-                if symbol_name != "first_trap_table" {
+                if !VALID_SYMBOLS.contains(&symbol_name) {
                     return None;
                 }
 
                 Some(symbol.st_value)
             })
-            .with_context(|| "Elf file does not have 'first_trap_table' symbol")?;
+            .with_context(|| {
+                format!(
+                    "Could not find trap table; searched for symbols {:?}",
+                    VALID_SYMBOLS
+                )
+            })?;
 
         Ok(TrapMetadata {
-            trap_symbol: trap_symbol.try_into().unwrap(),
+            trap_symbol: Some(trap_symbol.try_into().unwrap()),
         })
     }
 
+    /// Creates an instance with no metadata associated to it
+    ///
+    /// When [`trap_class`][Self::trap_class] is called on such an instance,
+    /// it will always return [None].
+    pub fn empty() -> Self {
+        TrapMetadata { trap_symbol: None }
+    }
+
+    /// Based on the metadata in this structure, attempt to identify the trap
+    /// class based on the given address
+    /// 
+    /// This address is usually the program counter of the program when it hit the trap.
     fn trap_class(&self, address: u32) -> Option<u8> {
-        let offset_from_start = address.checked_sub(self.trap_symbol)?;
+        let offset_from_start = address.checked_sub(self.trap_symbol?)?;
 
         if offset_from_start > 8 * 32 {
             return None;
