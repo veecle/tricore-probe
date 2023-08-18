@@ -34,15 +34,9 @@ struct Args {
     #[arg(long, default_value_t = false)]
     halt_memtool: bool,
 
-    /// Enable verbose logging
-    #[arg(short, long)]
-    verbose: bool,
-}
-
-fn existing_path(input_path: &str) -> Result<PathBuf, anyhow::Error> {
-    let path = PathBuf::from_str(input_path).with_context(|| "Value is not a correct path")?;
-
-    Ok(path)
+    /// Increase verbosity for logging
+    #[arg(short, long, action = clap::ArgAction::Count)]
+    verbose: u8,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -50,9 +44,7 @@ fn main() -> anyhow::Result<()> {
 
     env_logger::init();
 
-    if !args.verbose {
-        log::set_max_level(log::LevelFilter::Info);
-    }
+    log::set_max_level(filter_from_verbosity(args.verbose));
 
     let command_server = ChipInterface::new(args.backend)?;
 
@@ -75,4 +67,19 @@ fn main() -> anyhow::Result<()> {
     backtrace_info.log_stdout();
 
     Ok(()) as Result<(), anyhow::Error>
+}
+
+fn filter_from_verbosity(verbose_flag_count: u8) -> log::LevelFilter {
+    match verbose_flag_count {
+        0 => log::LevelFilter::Warn,
+        1 => log::LevelFilter::Info,
+        2 => log::LevelFilter::Debug,
+        _ => log::LevelFilter::Trace,
+    }
+}
+
+fn existing_path(input_path: &str) -> Result<PathBuf, anyhow::Error> {
+    let path = PathBuf::from_str(input_path).with_context(|| "Value is not a correct path")?;
+
+    Ok(path)
 }
