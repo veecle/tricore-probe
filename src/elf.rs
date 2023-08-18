@@ -1,7 +1,7 @@
 //! Utilities to work with elf files
 
 use std::fs::File;
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 use anyhow::Context;
 use std::io::Write;
@@ -25,18 +25,26 @@ pub fn elf_to_hex(data: &[u8]) -> anyhow::Result<String> {
         .args(["-O", "ihex"])
         .arg(input_path.as_path().display().to_string())
         .arg(output_file.as_path().display().to_string())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+
+    let result = command
         .spawn()
         .with_context(|| "Cannot spawn 'objcopy' - is the program installed?")?
-        .wait()
+        .wait_with_output()
         .with_context(|| "objcopy failed to execute")?;
 
-    if !command.success() {
+    if !result.status.success() {
         let message = format!(
-            "objcopy did not execute successfully, exit code={:?}",
-            command
+            "Running {:?} did not execute successfully, exit code={:?}, stderr={:?}, stdout={:?}",
+            command,
+            result
+                .status
                 .code()
                 .map(|code| format!("{}", code.clone()))
-                .unwrap_or("<undefined>".to_owned())
+                .unwrap_or("<undefined>".to_owned()),
+            String::from_utf8_lossy(&result.stderr),
+            String::from_utf8_lossy(&result.stdout),
         );
         return Err(anyhow::Error::msg(message));
     }
