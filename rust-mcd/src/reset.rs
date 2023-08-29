@@ -29,6 +29,7 @@ impl From<mcd_rst_info_st> for ResetInfo {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct ResetClass<'a> {
     bit_set: u8,
     core: &'a Core<'a>,

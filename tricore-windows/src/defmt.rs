@@ -12,10 +12,13 @@ use tricore_common::backtrace::Stacktrace;
 /// Decode the rtt data from the first channel of the specified rtt block and
 /// write it to the supplied data sink.
 ///
-/// The function will return when the device halts, e.g. when hitting a breakpoint.
+/// A main core must be provided to obtain the RTT data from the chip.
+///
+/// The function will return when the device halts, e.g. when any core hits a breakpoint.
 /// The backtrace returned is obtained by traversing the CSA link list.
 pub fn decode_rtt<W: Write>(
     core: &mut Core<'_>,
+    secondary_cores: &mut [Core<'_>],
     rtt_block_address: u64,
     mut data_sink: W,
 ) -> anyhow::Result<HaltReason> {
@@ -23,6 +26,8 @@ pub fn decode_rtt<W: Write>(
     // Construct reset class 0 which is assumed to be the simplest reset
     // Can we assume that this reset class exists and it fits the usecase here?
     let system_reset = ResetClass::construct_reset_class(core, 0);
+
+    // Do we also need to reset the other cores?
     core.reset(system_reset, true)?;
 
     log::info!(
@@ -125,15 +130,37 @@ pub fn decode_rtt<W: Write>(
             data_sink.write_all(&new_data)?;
             data_sink.flush()?;
         } else {
-            // Check if the core is still running, if it is not we assume a
-            // breakpoint was hit
-            let core_state = core.query_state()?;
-            if core_state.state != CoreState::Running {
-                log::trace!("Device halted, attempting to acquire backtrace");
-                let backtrace = (&*core)
-                    .read_current()
-                    .with_context(|| "Cannot read backtrace from device")?;
-                return Ok(HaltReason::DebugHit(backtrace));
+            /// Check if the core is still running, if it is not we assume a
+            /// breakpoint was hit
+            ///
+            /// This function is a bit of a hacky to work around lifetime issues
+            /// when borrowing the cores in multiple iterations of the loop
+            fn should_exit_fore_core(core: &mut Core) -> Option<anyhow::Result<HaltReason>> {
+                let core_state = match core.query_state() {
+                    Ok(core_state) => core_state,
+                    Err(error) => return Some(Err(error)),
+                };
+                if core_state.state != CoreState::Running {
+                    log::trace!("Device halted, attempting to acquire backtrace");
+                    return Some(
+                        (&*core)
+                            .read_current()
+                            .with_context(|| "Cannot read backtrace from device")
+                            .map(|backtrace| HaltReason::DebugHit(backtrace)),
+                    );
+                }
+
+                None
+            }
+
+            if let Some(exit_reason) = should_exit_fore_core(core) {
+                return exit_reason;
+            }
+
+            for core in secondary_cores.iter_mut() {
+                if let Some(exit_reason) = should_exit_fore_core(core) {
+                    return exit_reason;
+                }
             }
         }
     }

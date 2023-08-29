@@ -115,6 +115,11 @@ impl System {
         }
         bail!("Could not open core after {TRIES} tries");
     }
+
+    /// The number of cores connected to this system
+    pub fn core_count(&self) -> usize {
+        self.core_connection.len()
+    }
 }
 
 impl Drop for System {

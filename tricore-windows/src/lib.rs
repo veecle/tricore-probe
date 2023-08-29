@@ -41,9 +41,18 @@ impl Chip for ChipInterface {
     ) -> anyhow::Result<Stacktrace> {
         rust_mcd::library::init();
         let system = System::connect()?;
+        let core_count = system.core_count();
         let mut core = system.get_core(0)?;
-        let HaltReason::DebugHit(halt_reason) =
-            decode_rtt(&mut core, rtt_control_block_address, decoder)?;
+        let secondary_cores: Result<Vec<_>, _> = (1..(core_count))
+            .map(|core_index| system.get_core(core_index))
+            .collect();
+        let mut secondary_cores = secondary_cores?;
+        let HaltReason::DebugHit(halt_reason) = decode_rtt(
+            &mut core,
+            &mut secondary_cores,
+            rtt_control_block_address,
+            decoder,
+        )?;
         Ok(halt_reason)
     }
 }
@@ -54,6 +63,7 @@ impl ChipInterface {
         let system = System::connect()?;
         let core = system.get_core(0)?;
         let system_reset = ResetClass::construct_reset_class(&core, 0);
+        // Do we also need to reset the other cores?
         core.reset(system_reset, true)?;
         core.run()?;
         drop(system);
