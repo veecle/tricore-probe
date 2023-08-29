@@ -4,7 +4,7 @@ use byteorder::ReadBytesExt;
 use rust_mcd::{
     breakpoint::TriggerType,
     core::{Core, CoreState},
-    reset::ResetClass,
+    reset::ResetClass, error::EventError,
 };
 use std::io::Write;
 use tricore_common::backtrace::Stacktrace;
@@ -135,11 +135,20 @@ pub fn decode_rtt<W: Write>(
             ///
             /// This function is a bit of a hacky to work around lifetime issues
             /// when borrowing the cores in multiple iterations of the loop
-            fn should_exit_fore_core(core: &mut Core) -> Option<anyhow::Result<HaltReason>> {
-                let core_state = match core.query_state() {
-                    Ok(core_state) => core_state,
-                    Err(error) => return Some(Err(error)),
+            fn should_exit_fore_core(core: &mut Core, accept_reset_event: bool) -> Option<anyhow::Result<HaltReason>> {
+                let core_state = if accept_reset_event {
+                    match core.attempt_query_state(EventError::RESET) {
+                        Ok(None) => return None,
+                        Ok(Some(core_state)) => core_state,
+                        Err(error) => return Some(Err(error))
+                    }
+                } else {
+                    match core.query_state() {
+                        Ok(core_state) => core_state,
+                        Err(error) => return Some(Err(error)),
+                    }
                 };
+                
                 if core_state.state != CoreState::Running {
                     log::trace!("Device halted, attempting to acquire backtrace");
                     return Some(
@@ -153,12 +162,12 @@ pub fn decode_rtt<W: Write>(
                 None
             }
 
-            if let Some(exit_reason) = should_exit_fore_core(core) {
+            if let Some(exit_reason) = should_exit_fore_core(core, false) {
                 return exit_reason.context("Cannot query state of the main core");
             }
 
             for (secondary_index, core) in secondary_cores.iter_mut().enumerate() {
-                if let Some(exit_reason) = should_exit_fore_core(core) {
+                if let Some(exit_reason) = should_exit_fore_core(core, true) {
                     return exit_reason.with_context(|| format!("Cannot query state of core {}", secondary_index+1));
                 }
             }

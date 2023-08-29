@@ -9,7 +9,7 @@ use super::{registers::RegisterGroups, reset::ResetClass, MCD_LIB};
 
 use crate::{
     breakpoint::TriggerType,
-    error::expect_error,
+    error::{expect_error, EventError},
     mcd_bindings::{
         mcd_core_con_info_st, mcd_core_event_et, mcd_core_st, mcd_core_state_et, mcd_core_state_st,
         mcd_trig_set_state_st, mcd_trig_simple_core_st, mcd_trig_state_st, mcd_tx_st,
@@ -61,15 +61,30 @@ impl<'a> Core<'a> {
             .filter(move |bit| (reset_classes & (1 << *bit)) != 0)
             .map(|bit_set| ResetClass::construct_reset_class(self, bit_set)))
     }
-    pub fn query_state(&self) -> anyhow::Result<CoreInfo> {
+    /// Query the state of the core
+    /// 
+    /// If specified this function will exit gracefully with the [Option::None] value
+    /// when an expected event happens.
+    pub fn attempt_query_state(&self, tolerate_events: EventError) -> anyhow::Result<Option<CoreInfo>> {
         let mut output = mcd_core_state_st::default();
         let result = unsafe { MCD_LIB.mcd_qry_state_f(self.core, &mut output) };
 
         if result != 0 {
-            return Err(expect_error(Some(self))).with_context(|| "Could not query device state");
+            let error = expect_error(Some(self));
+            
+            if error.event_error_code().intersects(tolerate_events) {
+                return Ok(None)
+            } else {
+                return Err(error).context("Could not query device state")
+            }
         }
 
-        Ok(output.into())
+        Ok(Some(output.into()))
+    }
+
+    /// Like [Self::attempt_query_state], but will never exit gracefully
+    pub fn query_state(&self) -> anyhow::Result<CoreInfo> {
+        self.attempt_query_state(EventError::empty()).map(|o| o.unwrap())
     }
 
     fn query_payload_size(&self) -> u32 {

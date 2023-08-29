@@ -31,6 +31,16 @@ pub struct Error {
     inner: mcd_error_info_st,
 }
 
+impl Error {
+    pub fn error_code(&self) -> McdErrorCode {
+        McdErrorCode::from_code(self.inner.error_code)
+    }
+
+    pub fn event_error_code(&self) -> EventError {
+        EventError::from_bits_retain(self.inner.error_events)
+    }
+}
+
 impl std::error::Error for Error {}
 
 impl Display for Error {
@@ -40,8 +50,8 @@ impl Display for Error {
             .unwrap();
         f.write_fmt(format_args!(
             "{info}, error_code = {:?}, event_code = {:?}",
-            McdErrorCode::from_code(self.inner.error_code),
-            EventErrorCode::from_code(self.inner.error_events)
+            self.error_code(),
+            self.event_error_code()
         ))
     }
 }
@@ -52,46 +62,32 @@ impl From<mcd_error_info_st> for Error {
     }
 }
 
-use bitflags::bitflags;
-
-struct EventErrorCode {
-    value: EventErrorFlags,
-}
-
-impl EventErrorCode {
-    fn from_code(code: u32) -> Self {
-        EventErrorCode {
-            value: EventErrorFlags::from_bits_retain(code),
-        }
-    }
-}
-
-impl core::fmt::Debug for EventErrorCode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut debug = f.debug_struct("EventError");
-
-        if self.value.contains(EventErrorFlags::PWRDN) {
-            debug.field("power_down", &true);
-        }
-
-        if self.value.contains(EventErrorFlags::RESET) {
-            debug.field("reset", &true);
-        }
-
-        if self.value.contains(EventErrorFlags::HWFAILURE) {
-            debug.field("hardware_value", &true);
-        }
-
-        debug.finish()
-    }
-}
-
-bitflags! {
+bitflags::bitflags! {
     /// See the original header files for [crate::mcd_bindings::mcd_error_event_et]
-    struct EventErrorFlags: u32 {
+    pub struct EventError: u32 {
         const RESET = 0x00000001;
         const PWRDN = 0x00000002;
         const HWFAILURE = 0x00000004;
+    }
+}
+
+impl core::fmt::Debug for EventError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut debug = f.debug_struct("EventError");
+
+        if self.contains(EventError::PWRDN) {
+            debug.field("power_down", &true);
+        }
+
+        if self.contains(EventError::RESET) {
+            debug.field("reset", &true);
+        }
+
+        if self.contains(EventError::HWFAILURE) {
+            debug.field("hardware_failure", &true);
+        }
+
+        debug.finish()
     }
 }
 
