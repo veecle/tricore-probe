@@ -4,9 +4,10 @@ use byteorder::ReadBytesExt;
 use rust_mcd::{
     breakpoint::TriggerType,
     core::{Core, CoreState},
-    reset::ResetClass, error::EventError,
+    error::EventError,
+    reset::ResetClass,
 };
-use std::io::Write;
+use std::{io::Write, time::Duration};
 use tricore_common::backtrace::Stacktrace;
 
 /// Decode the rtt data from the first channel of the specified rtt block and
@@ -66,12 +67,6 @@ pub fn decode_rtt<W: Write>(
 
     core.write(rtt_block.flags_addr(), u32::to_le_bytes(2).to_vec())?; // Set the flag that the host is connected
 
-    /// Address and size of the buffer that holds the actually rtt data
-    struct BufferParameters {
-        address: u32,
-        size: u32,
-    }
-
     // Read the buffer parameters at startup, they should not change at runtime
     let ring_buffer = {
         let data = core
@@ -95,89 +90,76 @@ pub fn decode_rtt<W: Write>(
     let mut local_read_index = 0;
 
     loop {
-        let device_write_index = core
-            .read_bytes(rtt_block.device_write_index_addr(), 4)
-            .with_context(|| "Error while obtaining the device write index")?
-            .as_slice()
-            .read_u32::<byteorder::LE>()?;
-        if device_write_index != local_read_index {
-            if device_write_index > ring_buffer.size {
-                bail!("The RTT write index on the device is {:#X} which exceeds the given size of {:#X}", device_write_index, ring_buffer.size);
-            }
-            let new_data = if device_write_index < local_read_index {
-                // The write wrapped, we might need to do two reads
-                let mut chunk_at_end = core
-                    .read_bytes(
-                        (ring_buffer.address + local_read_index) as u64,
-                        (ring_buffer.size - local_read_index) as usize,
-                    )
-                    .with_context(|| "Error while reading buffer data")?;
-                if device_write_index != 0 {
-                    chunk_at_end.extend(
-                        core.read_bytes(ring_buffer.address as u64, device_write_index as usize)
-                            .with_context(|| "Error while reading buffer data")?,
-                    );
+        read_from_core(
+            core,
+            &mut data_sink,
+            &rtt_block,
+            &mut local_read_index,
+            &ring_buffer,
+        )?;
+
+        /// Check if the core is still running, if it is not we assume a
+        /// breakpoint was hit
+        ///
+        /// This function is a bit of a hacky to work around lifetime issues
+        /// when borrowing the cores in multiple iterations of the loop
+        fn should_exit_fore_core(
+            core: &mut Core,
+            accept_reset_event: bool,
+        ) -> Option<anyhow::Result<HaltReason>> {
+            let core_state = if accept_reset_event {
+                match core.attempt_query_state(EventError::RESET) {
+                    Ok(None) => {
+                        log::warn!("Cannot query state for core");
+                        return None;
+                    }
+                    Ok(Some(core_state)) => core_state,
+                    Err(error) => return Some(Err(error)),
                 }
-                chunk_at_end
             } else {
-                let read_address = ring_buffer.address + local_read_index;
-                let read_length = device_write_index - local_read_index;
-                core.read_bytes(read_address as u64, read_length as usize)
-                    .with_context(|| "Error while reading buffer data")?
+                match core.query_state() {
+                    Ok(core_state) => core_state,
+                    Err(error) => return Some(Err(error)),
+                }
             };
-            log::trace!("Read {} bytes from the device", new_data.len());
-            local_read_index = device_write_index;
 
-            core.write(
-                rtt_block.host_read_index_addr(),
-                u32::to_le_bytes(local_read_index).into(),
-            )?;
-            data_sink.write_all(&new_data)?;
-            data_sink.flush()?;
-        } else {
-            /// Check if the core is still running, if it is not we assume a
-            /// breakpoint was hit
-            ///
-            /// This function is a bit of a hacky to work around lifetime issues
-            /// when borrowing the cores in multiple iterations of the loop
-            fn should_exit_fore_core(core: &mut Core, accept_reset_event: bool) -> Option<anyhow::Result<HaltReason>> {
-                let core_state = if accept_reset_event {
-                    match core.attempt_query_state(EventError::RESET) {
-                        Ok(None) => {
-                            log::warn!("Cannot query state for core");
-                            return None
-                        },
-                        Ok(Some(core_state)) => core_state,
-                        Err(error) => return Some(Err(error))
-                    }
-                } else {
-                    match core.query_state() {
-                        Ok(core_state) => core_state,
-                        Err(error) => return Some(Err(error)),
-                    }
-                };
+            if core_state.state != CoreState::Running {
+                log::trace!("Device halted, attempting to acquire backtrace");
+                return Some(
+                    (&*core)
+                        .read_current()
+                        .with_context(|| "Cannot read backtrace from device")
+                        .map(|backtrace| HaltReason::DebugHit(backtrace)),
+                );
+            }
 
-                if core_state.state != CoreState::Running {
-                    log::trace!("Device halted, attempting to acquire backtrace");
-                    return Some(
-                        (&*core)
-                            .read_current()
-                            .with_context(|| "Cannot read backtrace from device")
-                            .map(|backtrace| HaltReason::DebugHit(backtrace)),
+            None
+        }
+
+        if let Some(exit_reason) = should_exit_fore_core(core, false) {
+            return exit_reason.context("Cannot query state of the main core");
+        }
+
+        for (secondary_index, core) in secondary_cores.iter_mut().enumerate() {
+            if let Some(exit_reason) = should_exit_fore_core(core, true) {
+                if exit_reason.is_ok() {
+                    const RTT_WAIT_DURATION: Duration = Duration::from_secs(1);
+                    log::info!(
+                        "Secondary core {secondary_index} halted, collecting RTT data for {}ms",
+                        RTT_WAIT_DURATION.as_millis()
                     );
+                    std::thread::sleep(RTT_WAIT_DURATION);
+                    read_from_core(
+                        core,
+                        &mut data_sink,
+                        &rtt_block,
+                        &mut local_read_index,
+                        &ring_buffer,
+                    )?;
                 }
-
-                None
-            }
-
-            if let Some(exit_reason) = should_exit_fore_core(core, false) {
-                return exit_reason.context("Cannot query state of the main core");
-            }
-
-            for (secondary_index, core) in secondary_cores.iter_mut().enumerate() {
-                if let Some(exit_reason) = should_exit_fore_core(core, true) {
-                    return exit_reason.with_context(|| format!("Cannot query state of core {}", secondary_index+1));
-                }
+                return exit_reason.with_context(|| {
+                    format!("Cannot query state of core {}", secondary_index + 1)
+                });
             }
         }
     }
@@ -223,4 +205,66 @@ impl RttControlBlock {
     fn flags_addr(&self) -> u64 {
         self.base_address + 44
     }
+}
+
+/// Address and size of the buffer that holds the actually rtt data
+struct BufferParameters {
+    address: u32,
+    size: u32,
+}
+
+fn read_from_core<W: Write>(
+    core: &mut Core,
+    data_sink: &mut W,
+    rtt_block: &RttControlBlock,
+    local_read_index: &mut u32,
+    ring_buffer: &BufferParameters,
+) -> anyhow::Result<()> {
+    let device_write_index = core
+        .read_bytes(rtt_block.device_write_index_addr(), 4)
+        .with_context(|| "Error while obtaining the device write index")?
+        .as_slice()
+        .read_u32::<byteorder::LE>()?;
+    if device_write_index == *local_read_index {
+        return Ok(());
+    }
+    if device_write_index > ring_buffer.size {
+        bail!(
+            "The RTT write index on the device is {:#X} which exceeds the given size of {:#X}",
+            device_write_index,
+            ring_buffer.size
+        );
+    }
+    let new_data = if device_write_index < *local_read_index {
+        // The write wrapped, we might need to do two reads
+        let mut chunk_at_end = core
+            .read_bytes(
+                (ring_buffer.address + *local_read_index) as u64,
+                (ring_buffer.size - *local_read_index) as usize,
+            )
+            .with_context(|| "Error while reading buffer data")?;
+        if device_write_index != 0 {
+            chunk_at_end.extend(
+                core.read_bytes(ring_buffer.address as u64, device_write_index as usize)
+                    .with_context(|| "Error while reading buffer data")?,
+            );
+        }
+        chunk_at_end
+    } else {
+        let read_address = ring_buffer.address + *local_read_index;
+        let read_length = device_write_index - *local_read_index;
+        core.read_bytes(read_address as u64, read_length as usize)
+            .with_context(|| "Error while reading buffer data")?
+    };
+    log::trace!("Read {} bytes from the device", new_data.len());
+    *local_read_index = device_write_index;
+
+    core.write(
+        rtt_block.host_read_index_addr(),
+        u32::to_le_bytes(*local_read_index).into(),
+    )?;
+    data_sink.write_all(&new_data)?;
+    data_sink.flush()?;
+
+    Ok(())
 }
