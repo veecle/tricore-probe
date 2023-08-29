@@ -138,7 +138,10 @@ pub fn decode_rtt<W: Write>(
             fn should_exit_fore_core(core: &mut Core, accept_reset_event: bool) -> Option<anyhow::Result<HaltReason>> {
                 let core_state = if accept_reset_event {
                     match core.attempt_query_state(EventError::RESET) {
-                        Ok(None) => return None,
+                        Ok(None) => {
+                            log::warn!("Cannot query state for core");
+                            return None
+                        },
                         Ok(Some(core_state)) => core_state,
                         Err(error) => return Some(Err(error))
                     }
@@ -148,7 +151,7 @@ pub fn decode_rtt<W: Write>(
                         Err(error) => return Some(Err(error)),
                     }
                 };
-                
+
                 if core_state.state != CoreState::Running {
                     log::trace!("Device halted, attempting to acquire backtrace");
                     return Some(
