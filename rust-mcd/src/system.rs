@@ -18,7 +18,7 @@ use super::core::Core;
 
 /// A single system (e.g. chip)
 pub struct System {
-    core_connection: mcd_core_con_info_st,
+    core_connection: Vec<mcd_core_con_info_st>,
 }
 
 impl System {
@@ -80,12 +80,15 @@ impl System {
             .with_context(|| format!("Cannot obtain information for {core_count} core(s)"))?;
 
         Ok(System {
-            core_connection: core_info[0],
+            core_connection: core_info,
         })
     }
 
-    /// Open a connection to the first core of this system
-    pub fn get_first_core(&self) -> Result<Core, anyhow::Error> {
+    /// Open a connection to a core of this system
+    ///
+    /// # Panic
+    /// This method will panic if the index exceeds the number of cores available
+    pub fn get_core(&self, core_index: usize) -> Result<Core, anyhow::Error> {
         let mut reference = ptr::null_mut();
 
         // I observed that in certain circumstances opening a core can fail (mcd_open_core_f
@@ -93,12 +96,14 @@ impl System {
         const TRIES: usize = 5;
 
         for nth_try in 0..TRIES {
-            let result = unsafe { MCD_LIB.mcd_open_core_f(&self.core_connection, &mut reference) };
+            let result = unsafe {
+                MCD_LIB.mcd_open_core_f(&self.core_connection[core_index], &mut reference)
+            };
             match result {
                 0 => {
                     return Ok(Core::new(
                         unsafe { NonNull::new(reference).unwrap().as_ref() },
-                        &self.core_connection,
+                        &self.core_connection[core_index],
                     ))
                 }
                 2 => log::trace!("Retrying to open core, try number {nth_try}"),

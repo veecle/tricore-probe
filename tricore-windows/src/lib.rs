@@ -41,7 +41,7 @@ impl Chip for ChipInterface {
     ) -> anyhow::Result<Stacktrace> {
         rust_mcd::library::init();
         let system = System::connect()?;
-        let mut core = system.get_first_core()?;
+        let mut core = system.get_core(0)?;
         let HaltReason::DebugHit(halt_reason) =
             decode_rtt(&mut core, rtt_control_block_address, decoder)?;
         Ok(halt_reason)
@@ -52,7 +52,7 @@ impl ChipInterface {
     pub fn reset(&self) -> anyhow::Result<()> {
         rust_mcd::library::init();
         let system = System::connect()?;
-        let core = system.get_first_core()?;
+        let core = system.get_core(0)?;
         let system_reset = ResetClass::construct_reset_class(&core, 0);
         core.reset(system_reset, true)?;
         core.run()?;
