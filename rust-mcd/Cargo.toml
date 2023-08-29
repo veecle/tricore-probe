@@ -11,6 +11,7 @@ tempfile = "3.3.0"
 log = "0.4.17"
 anyhow = "1.0.69"
 bitfield-struct = "0.3.2"
+bitflags = "2.4.0"
 
 [build-dependencies]
 bindgen = "0.64.0"
