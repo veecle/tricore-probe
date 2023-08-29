@@ -154,12 +154,12 @@ pub fn decode_rtt<W: Write>(
             }
 
             if let Some(exit_reason) = should_exit_fore_core(core) {
-                return exit_reason;
+                return exit_reason.context("Cannot query state of the main core");
             }
 
-            for core in secondary_cores.iter_mut() {
+            for (secondary_index, core) in secondary_cores.iter_mut().enumerate() {
                 if let Some(exit_reason) = should_exit_fore_core(core) {
-                    return exit_reason;
+                    return exit_reason.with_context(|| format!("Cannot query state of core {}", secondary_index+1));
                 }
             }
         }
