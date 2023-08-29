@@ -144,8 +144,11 @@ pub fn decode_rtt<W: Write>(
             if let Some(exit_reason) = should_exit_fore_core(core, true) {
                 if exit_reason.is_ok() {
                     const RTT_WAIT_DURATION: Duration = Duration::from_secs(1);
+                    // FIXME: The core index we give here might be misleading, we can probably obtain 
+                    // that information from the core itself
                     log::info!(
-                        "Secondary core {secondary_index} halted, collecting RTT data for {}ms",
+                        "Secondary core {} halted, collecting RTT data for {}ms",
+                        secondary_index + 1,
                         RTT_WAIT_DURATION.as_millis()
                     );
                     std::thread::sleep(RTT_WAIT_DURATION);
