@@ -71,7 +71,13 @@ impl System {
 
         log::trace!("Scanning for cores in the given system");
 
-        let core_info = MCD_LIB.query_core_info(&system_info[0], 0, 1)?;
+        let core_count = MCD_LIB
+            .query_core_count(&system_info[0])
+            .context("Cannot obtain core count")?;
+
+        let core_info = MCD_LIB
+            .query_core_info(&system_info[0], 0, core_count)
+            .with_context(|| format!("Cannot obtain information for {core_count} core(s)"))?;
 
         Ok(System {
             core_connection: core_info[0],
