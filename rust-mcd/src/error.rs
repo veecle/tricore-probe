@@ -14,7 +14,7 @@ pub fn get_error(core: Option<&'_ Core<'_>>) -> Option<Error> {
         .map(|core| core.core as *const mcd_core_st)
         .unwrap_or(std::ptr::null());
     unsafe { MCD_LIB.mcd_qry_error_info_f(core_reference, &mut output) };
-    if output.error_code != MCD_ERR_NONE as u32 {
+    if output.return_status != MCD_ERR_NONE as u32 {
         Some(output.into())
     } else {
         None
