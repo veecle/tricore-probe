@@ -13,6 +13,7 @@ pub mod registers;
 pub mod reset;
 pub mod system;
 
+mod raw;
 mod transaction;
 
 mod mcd_bindings {

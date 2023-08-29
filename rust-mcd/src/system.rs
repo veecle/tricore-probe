@@ -71,21 +71,7 @@ impl System {
 
         log::trace!("Scanning for cores in the given system");
 
-        let mut core_info = [mcd_core_con_info_st::default(); 1];
-        let mut num_core = 1;
-        let result = unsafe {
-            MCD_LIB.mcd_qry_cores_f(
-                system_info.as_ptr(),
-                0,
-                &mut num_core,
-                core_info.as_mut_ptr(),
-            )
-        };
-
-        if result != 0 {
-            return Err(get_error(None).unwrap())
-                .with_context(|| "Cannot connect to the first core of the system");
-        }
+        let core_info = MCD_LIB.query_core_info(&system_info[0], 0, 1)?;
 
         Ok(System {
             core_connection: core_info[0],
