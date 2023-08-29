@@ -110,7 +110,7 @@ pub fn decode_rtt<W: Write>(
             let core_state = if accept_reset_event {
                 match core.attempt_query_state(EventError::RESET) {
                     Ok(None) => {
-                        log::warn!("Cannot query state for core");
+                        log::debug!("Cannot query state for core, skipping gracefully");
                         return None;
                     }
                     Ok(Some(core_state)) => core_state,
