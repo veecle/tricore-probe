@@ -30,6 +30,11 @@ pub fn decode_rtt<W: Write>(
     // Do we also need to reset the other cores?
     core.reset(system_reset, true)?;
 
+    for secondary_core in secondary_cores.iter_mut() {
+        secondary_core.reset(system_reset, true)?;
+        secondary_core.download_triggers();
+    }
+
     log::info!(
         "Trying to detect segger rtt block at {:#X}",
         rtt_block_address
