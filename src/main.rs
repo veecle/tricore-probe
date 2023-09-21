@@ -13,6 +13,7 @@ pub mod elf;
 use backtrace::ParseInfo;
 use chip_interface::ChipInterface;
 use defmt::DefmtDecoder;
+use log::LevelFilter;
 
 /// Simple program to flash and interface with tricore chips
 #[derive(Parser, Debug)]
@@ -34,9 +35,9 @@ struct Args {
     #[arg(long, default_value_t = false)]
     halt_memtool: bool,
 
-    /// Increase verbosity for logging
-    #[arg(short, long, action = clap::ArgAction::Count)]
-    verbose: u8,
+    /// Sets the log level
+    #[arg(short, long, value_enum, required = false, default_value_t = LogLevel::Warn)]
+    log: LogLevel,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -44,7 +45,14 @@ fn main() -> anyhow::Result<()> {
 
     env_logger::init();
 
-    log::set_max_level(filter_from_verbosity(args.verbose));
+    let log_filter = match args.log {
+        LogLevel::Warn => LevelFilter::Warn,
+        LogLevel::Info => LevelFilter::Info,
+        LogLevel::Debug => LevelFilter::Debug,
+        LogLevel::Trace => LevelFilter::Trace,
+    };
+
+    log::set_max_level(log_filter);
 
     let command_server = ChipInterface::new(args.backend)?;
 
@@ -69,13 +77,12 @@ fn main() -> anyhow::Result<()> {
     Ok(()) as Result<(), anyhow::Error>
 }
 
-fn filter_from_verbosity(verbose_flag_count: u8) -> log::LevelFilter {
-    match verbose_flag_count {
-        0 => log::LevelFilter::Warn,
-        1 => log::LevelFilter::Info,
-        2 => log::LevelFilter::Debug,
-        _ => log::LevelFilter::Trace,
-    }
+#[derive(clap::ValueEnum, Clone, Debug)]
+enum LogLevel {
+    Warn,
+    Info,
+    Debug,
+    Trace,
 }
 
 fn existing_path(input_path: &str) -> anyhow::Result<PathBuf> {
