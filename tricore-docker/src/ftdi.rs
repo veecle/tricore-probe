@@ -23,7 +23,9 @@ impl FTDIClient {
             handle_client(input, output);
         });
 
-        FTDIClient { _ftdi_thread: ftdi_thread }
+        FTDIClient {
+            _ftdi_thread: ftdi_thread,
+        }
     }
 
     #[allow(dead_code)]
@@ -313,7 +315,6 @@ fn handle_client(input: &File, output: &File) {
     }
     log::warn!("Failed to read from input");
 }
-
 
 pub struct LocalState {
     devices: HashMap<u32, FT_HANDLE>,

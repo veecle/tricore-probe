@@ -2,16 +2,16 @@
 
 use std::io::Write;
 
+use das::run_console;
 use defmt::{decode_rtt, HaltReason};
 use flash::MemtoolUpload;
 use rust_mcd::{reset::ResetClass, system::System};
-use das::run_console;
 use tricore_common::{backtrace::Stacktrace, Chip};
 
 mod backtrace;
+pub mod das;
 pub mod defmt;
 pub mod flash;
-pub mod das;
 
 #[derive(clap::Args, Debug)]
 pub struct Config;

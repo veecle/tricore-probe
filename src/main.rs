@@ -13,6 +13,7 @@ pub mod elf;
 use backtrace::ParseInfo;
 use chip_interface::ChipInterface;
 use defmt::DefmtDecoder;
+use log::LevelFilter;
 
 /// Simple program to flash and interface with tricore chips
 #[derive(Parser, Debug)]
@@ -34,15 +35,9 @@ struct Args {
     #[arg(long, default_value_t = false)]
     halt_memtool: bool,
 
-    /// Enable verbose logging
-    #[arg(short, long)]
-    verbose: bool,
-}
-
-fn existing_path(input_path: &str) -> Result<PathBuf, anyhow::Error> {
-    let path = PathBuf::from_str(input_path).with_context(|| "Value is not a correct path")?;
-
-    Ok(path)
+    /// Sets the log level
+    #[arg(short, long, value_enum, required = false, default_value_t = LogLevel::Warn)]
+    log_level: LogLevel,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -50,9 +45,14 @@ fn main() -> anyhow::Result<()> {
 
     env_logger::init();
 
-    if !args.verbose {
-        log::set_max_level(log::LevelFilter::Info);
-    }
+    let log_filter = match args.log_level {
+        LogLevel::Warn => LevelFilter::Warn,
+        LogLevel::Info => LevelFilter::Info,
+        LogLevel::Debug => LevelFilter::Debug,
+        LogLevel::Trace => LevelFilter::Trace,
+    };
+
+    log::set_max_level(log_filter);
 
     let command_server = ChipInterface::new(args.backend)?;
 
@@ -75,4 +75,16 @@ fn main() -> anyhow::Result<()> {
     backtrace_info.log_stdout();
 
     Ok(()) as Result<(), anyhow::Error>
+}
+
+#[derive(clap::ValueEnum, Clone, Debug)]
+enum LogLevel {
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
+
+fn existing_path(input_path: &str) -> anyhow::Result<PathBuf> {
+    PathBuf::from_str(input_path).with_context(|| "Value is not a correct path")
 }

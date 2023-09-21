@@ -15,7 +15,7 @@ pub fn run_console() {
     let _started_dashpas = process.spawn().unwrap();
 
     log::trace!("Starting UDAS_Console");
-    
+
     let mut udas_console = Command::new(das_home.join("servers/udas/UDAS_Console.exe"));
     let udas_console = udas_console.stderr(Stdio::inherit()).stdout(Stdio::null());
     let mut udas_console = udas_console.spawn().unwrap();
