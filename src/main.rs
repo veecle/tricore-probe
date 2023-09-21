@@ -37,7 +37,7 @@ struct Args {
 
     /// Sets the log level
     #[arg(short, long, value_enum, required = false, default_value_t = LogLevel::Warn)]
-    log: LogLevel,
+    log_level: LogLevel,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -45,7 +45,7 @@ fn main() -> anyhow::Result<()> {
 
     env_logger::init();
 
-    let log_filter = match args.log {
+    let log_filter = match args.log_level {
         LogLevel::Warn => LevelFilter::Warn,
         LogLevel::Info => LevelFilter::Info,
         LogLevel::Debug => LevelFilter::Debug,
