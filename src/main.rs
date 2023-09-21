@@ -78,8 +78,6 @@ fn filter_from_verbosity(verbose_flag_count: u8) -> log::LevelFilter {
     }
 }
 
-fn existing_path(input_path: &str) -> Result<PathBuf, anyhow::Error> {
-    let path = PathBuf::from_str(input_path).with_context(|| "Value is not a correct path")?;
-
-    Ok(path)
+fn existing_path(input_path: &str) -> anyhow::Result<PathBuf> {
+    PathBuf::from_str(input_path).with_context(|| "Value is not a correct path")
 }
