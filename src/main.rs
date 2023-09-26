@@ -13,6 +13,7 @@ pub mod elf;
 use backtrace::ParseInfo;
 use chip_interface::ChipInterface;
 use defmt::DefmtDecoder;
+use env_logger::{Builder, Target};
 use log::LevelFilter;
 
 /// Simple program to flash and interface with tricore chips
@@ -43,8 +44,6 @@ struct Args {
 fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
-    env_logger::init();
-
     let log_filter = match args.log_level {
         LogLevel::Warn => LevelFilter::Warn,
         LogLevel::Info => LevelFilter::Info,
@@ -52,7 +51,10 @@ fn main() -> anyhow::Result<()> {
         LogLevel::Trace => LevelFilter::Trace,
     };
 
-    log::set_max_level(log_filter);
+    Builder::from_default_env()
+        .filter_level(log_filter)
+        .target(Target::Stdout)
+        .init();
 
     let command_server = ChipInterface::new(args.backend)?;
 
