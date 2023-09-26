@@ -136,15 +136,30 @@ pub fn decode_rtt<W: Write>(
             None
         }
 
+        const RTT_WAIT_DURATION: Duration = Duration::from_millis(300);
+
         if let Some(exit_reason) = should_exit_fore_core(core, false) {
+            if exit_reason.is_ok() {
+                log::info!(
+                    "Main core halted, collecting RTT data for {}ms",
+                    RTT_WAIT_DURATION.as_millis()
+                );
+                std::thread::sleep(RTT_WAIT_DURATION);
+                read_from_core(
+                    core,
+                    &mut data_sink,
+                    &rtt_block,
+                    &mut local_read_index,
+                    &ring_buffer,
+                )?;
+            }
             return exit_reason.context("Cannot query state of the main core");
         }
 
         for (secondary_index, core) in secondary_cores.iter_mut().enumerate() {
             if let Some(exit_reason) = should_exit_fore_core(core, true) {
                 if exit_reason.is_ok() {
-                    const RTT_WAIT_DURATION: Duration = Duration::from_secs(1);
-                    // FIXME: The core index we give here might be misleading, we can probably obtain 
+                    // FIXME: The core index we give here might be misleading, we can probably obtain
                     // that information from the core itself
                     log::info!(
                         "Secondary core {} halted, collecting RTT data for {}ms",
