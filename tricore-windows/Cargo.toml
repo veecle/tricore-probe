@@ -13,3 +13,6 @@ tempfile = "3.3.0"
 byteorder = "1.4.3"
 rust-mcd = { path = "../rust-mcd" }
 tricore-common = { path = "../tricore-common" }
+
+[features]
+dasv8 = ["rust-mcd/dasv8"]

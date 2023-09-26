@@ -7,12 +7,15 @@ use std::{
 
 /// Spawns a DAS instance
 pub fn run_console() {
-    log::trace!("Starting dashpas");
-
     let das_home =
         PathBuf::from(std::env::var("DAS_HOME").expect("DAS_HOME not defined, is DAS installed?"));
-    let mut process = Command::new(das_home.join("dashpas/das_dashpas.exe"));
-    let _started_dashpas = process.spawn().unwrap();
+
+    #[cfg(not(feature = "dasv8"))]
+    {
+        log::trace!("Starting dashpas");
+        let mut process = Command::new(das_home.join("dashpas/das_dashpas.exe"));
+        let _started_dashpas = process.spawn().unwrap();
+    }
 
     log::trace!("Starting UDAS_Console");
 

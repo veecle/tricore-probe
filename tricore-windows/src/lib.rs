@@ -2,7 +2,6 @@
 
 use std::io::Write;
 
-use das::run_console;
 use defmt::{decode_rtt, HaltReason};
 use flash::MemtoolUpload;
 use rust_mcd::{reset::ResetClass, system::System};
@@ -23,7 +22,9 @@ impl Chip for ChipInterface {
     type Config = Config;
 
     fn new(_config: Self::Config) -> anyhow::Result<Self> {
-        std::thread::spawn(run_console);
+        #[cfg(not(feature = "dasv8"))]
+        std::thread::spawn(das::run_console);
+        rust_mcd::library::init();
         Ok(ChipInterface {})
     }
 
@@ -39,7 +40,6 @@ impl Chip for ChipInterface {
         rtt_control_block_address: u64,
         decoder: W,
     ) -> anyhow::Result<Stacktrace> {
-        rust_mcd::library::init();
         let system = System::connect()?;
         let core_count = system.core_count();
         let mut core = system.get_core(0)?;
