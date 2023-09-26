@@ -1,6 +1,6 @@
 #![feature(type_alias_impl_trait)]
 
-use std::io::Write;
+use std::{io::Write, time::Duration};
 
 use defmt::{decode_rtt, HaltReason};
 use flash::MemtoolUpload;
@@ -23,7 +23,12 @@ impl Chip for ChipInterface {
 
     fn new(_config: Self::Config) -> anyhow::Result<Self> {
         #[cfg(not(feature = "dasv8"))]
-        std::thread::spawn(das::run_console);
+        {
+            std::thread::spawn(das::run_console);
+            // We need to wait a bit so that DAS is booted up correctly and sees
+            // all connected chips
+            std::thread::sleep(Duration::from_millis(800));
+        }
         rust_mcd::library::init();
         Ok(ChipInterface {})
     }
