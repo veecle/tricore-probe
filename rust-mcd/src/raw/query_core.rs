@@ -38,7 +38,7 @@ impl DynamicMCDxDAS {
         }
     }
 
-    /// See [Self::mcd_qry_cores_f], with core_count set to 0
+    /// See [Self::mcd_qry_cores_f], with `num_devices` set to 0
     pub fn query_core_count(&self, connection_info: &mcd_core_con_info_st) -> Result<u32> {
         let mut num_cores = 0;
 
