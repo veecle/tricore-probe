@@ -13,10 +13,11 @@ use tricore_common::backtrace::Stacktrace;
 /// Decode the rtt data from the first channel of the specified rtt block and
 /// write it to the supplied data sink.
 ///
-/// A main core must be provided to obtain the RTT data from the chip.
+/// A main core must be provided through which the RTT data is read from the chip.
 ///
-/// The function will return when the device halts, e.g. when any core hits a breakpoint.
-/// The backtrace returned is obtained by traversing the CSA link list.
+/// The function will return when the device halts, e.g. when any core (including the
+/// secondary ones) hits a breakpoint. The backtrace returned is obtained by
+/// traversing the CSA link list.
 pub fn decode_rtt<W: Write>(
     core: &mut Core<'_>,
     secondary_cores: &mut [Core<'_>],
