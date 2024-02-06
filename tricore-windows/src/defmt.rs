@@ -102,7 +102,7 @@ pub fn decode_rtt<W: Write>(
         /// Check if the core is still running, if it is not we assume a
         /// breakpoint was hit
         ///
-        /// This function is a bit of a hacky to work around lifetime issues
+        /// This function is a bit of a hack to work around lifetime issues
         /// when borrowing the cores in multiple iterations of the loop
         fn should_exit_fore_core(
             core: &mut Core,
