@@ -15,7 +15,7 @@ impl DynamicMCDxDAS {
     ) -> Result<Vec<mcd_core_con_info_st>> {
         assert!(
             core_query_count > 0,
-            "Can only query positive number of cores"
+            "Can only query non-zero number of cores"
         );
 
         let mut core_info = vec![mcd_core_con_info_st::default(); core_query_count as usize];
