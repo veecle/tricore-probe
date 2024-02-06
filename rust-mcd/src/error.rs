@@ -45,9 +45,14 @@ impl std::error::Error for Error {}
 
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let info = unsafe { CStr::from_ptr(&self.inner.error_str[0] as *const i8) }
+        // SAFETY:
+        // u8 and i8 share the same memory layout, so slices can be transmuted safely.
+        let error_string = unsafe { std::mem::transmute::<&[i8], &[u8]>(&self.inner.error_str) };
+        let info = CStr::from_bytes_until_nul(error_string)
+            .unwrap()
             .to_str()
             .unwrap();
+
         f.write_fmt(format_args!(
             "{info}, error_code = {:?}, event_code = {:?}",
             self.error_code(),
