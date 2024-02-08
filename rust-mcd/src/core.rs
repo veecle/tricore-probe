@@ -9,7 +9,7 @@ use super::{registers::RegisterGroups, reset::ResetClass, MCD_LIB};
 
 use crate::{
     breakpoint::TriggerType,
-    error::{expect_error, EventError},
+    error::expect_error,
     mcd_bindings::{
         mcd_core_con_info_st, mcd_core_event_et, mcd_core_st, mcd_core_state_et, mcd_core_state_st,
         mcd_trig_set_state_st, mcd_trig_simple_core_st, mcd_trig_state_st, mcd_tx_st,
@@ -62,29 +62,33 @@ impl<'a> Core<'a> {
             .map(|bit_set| ResetClass::construct_reset_class(self, bit_set)))
     }
     /// Query the state of the core
-    /// 
-    /// If specified this function will exit gracefully with the [Option::None] value
-    /// when an expected event happens.
-    pub fn attempt_query_state(&self, tolerate_events: EventError) -> anyhow::Result<Option<CoreInfo>> {
+    pub fn query_state(&self) -> Result<CoreInfo, crate::error::Error> {
         let mut output = mcd_core_state_st::default();
         let result = unsafe { MCD_LIB.mcd_qry_state_f(self.core, &mut output) };
 
         if result != 0 {
-            let error = expect_error(Some(self));
-            
-            if error.event_error_code().intersects(tolerate_events) {
-                return Ok(None)
-            } else {
-                return Err(error).context("Could not query device state")
-            }
+            return Err(expect_error(Some(self)));
         }
 
-        Ok(Some(output.into()))
+        Ok(output.into())
     }
 
-    /// Like [Self::attempt_query_state], but will never exit gracefully
-    pub fn query_state(&self) -> anyhow::Result<CoreInfo> {
-        self.attempt_query_state(EventError::empty()).map(|o| o.unwrap())
+    /// Like [Self::query_state], but will never exit gracefully
+    pub fn query_state_gracefully(
+        &self,
+        mut should_query_again: impl FnMut(&crate::error::Error) -> bool,
+    ) -> anyhow::Result<CoreInfo> {
+        loop {
+            match self.query_state() {
+                Ok(info) => return Ok(info),
+                Err(error) => {
+                    if should_query_again(&error) {
+                        continue;
+                    }
+                    return Err(error).context("Error is not tolerated");
+                }
+            }
+        }
     }
 
     fn query_payload_size(&self) -> u32 {

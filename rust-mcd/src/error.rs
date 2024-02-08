@@ -37,7 +37,7 @@ impl Error {
     }
 
     pub fn event_error_code(&self) -> EventError {
-        EventError::from_bits_retain(self.inner.error_events)
+        EventError::from_library_code(self.inner.error_events)
     }
 }
 
@@ -67,32 +67,21 @@ impl From<mcd_error_info_st> for Error {
     }
 }
 
-bitflags::bitflags! {
-    /// See the original header files for [crate::mcd_bindings::mcd_error_event_et]
-    pub struct EventError: u32 {
-        const RESET = 0x00000001;
-        const PWRDN = 0x00000002;
-        const HWFAILURE = 0x00000004;
-    }
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum EventError {
+    Reset,
+    PowerDown,
+    HardwareFailure,
 }
 
-impl core::fmt::Debug for EventError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut debug = f.debug_struct("EventError");
-
-        if self.contains(EventError::PWRDN) {
-            debug.field("power_down", &true);
+impl EventError {
+    fn from_library_code(code: u32) -> EventError {
+        match code {
+            0x1 => Self::Reset,
+            0x2 => Self::PowerDown,
+            0x4 => Self::HardwareFailure,
+            _ => panic!("Invalid library event error code {:x}", code),
         }
-
-        if self.contains(EventError::RESET) {
-            debug.field("reset", &true);
-        }
-
-        if self.contains(EventError::HWFAILURE) {
-            debug.field("hardware_failure", &true);
-        }
-
-        debug.finish()
     }
 }
 

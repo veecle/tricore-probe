@@ -104,24 +104,17 @@ pub fn decode_rtt<W: Write>(
         ///
         /// This function is a bit of a hack to work around lifetime issues
         /// when borrowing the cores in multiple iterations of the loop
-        fn should_exit_fore_core(
+        fn should_exit_for_core(
             core: &mut Core,
             accept_reset_event: bool,
         ) -> Option<anyhow::Result<HaltReason>> {
-            let core_state = if accept_reset_event {
-                match core.attempt_query_state(EventError::RESET) {
-                    Ok(None) => {
-                        log::debug!("Cannot query state for core, skipping gracefully");
-                        return None;
-                    }
-                    Ok(Some(core_state)) => core_state,
-                    Err(error) => return Some(Err(error)),
-                }
-            } else {
-                match core.query_state() {
-                    Ok(core_state) => core_state,
-                    Err(error) => return Some(Err(error)),
-                }
+            let core_state = core.query_state_gracefully(|e| {
+                accept_reset_event && e.event_error_code() == EventError::Reset
+            });
+
+            let core_state = match core_state {
+                Ok(core_state) => core_state,
+                Err(error) => return Some(Err(error).context("Failed to query core state")),
             };
 
             if core_state.state != CoreState::Running {
@@ -139,7 +132,7 @@ pub fn decode_rtt<W: Write>(
 
         const RTT_WAIT_DURATION: Duration = Duration::from_millis(300);
 
-        if let Some(exit_reason) = should_exit_fore_core(core, false) {
+        if let Some(exit_reason) = should_exit_for_core(core, false) {
             if exit_reason.is_ok() {
                 log::info!(
                     "Main core halted, collecting RTT data for {}ms",
@@ -158,7 +151,7 @@ pub fn decode_rtt<W: Write>(
         }
 
         for (secondary_index, core) in secondary_cores.iter_mut().enumerate() {
-            if let Some(exit_reason) = should_exit_fore_core(core, true) {
+            if let Some(exit_reason) = should_exit_for_core(core, true) {
                 if exit_reason.is_ok() {
                     // FIXME: The core index we give here might be misleading, we can probably obtain
                     // that information from the core itself
