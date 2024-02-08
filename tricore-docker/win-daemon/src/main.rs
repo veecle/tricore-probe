@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::Context;
-use rpc_api::win_daemon::{log::PipeLogger, Commands, Response};
+use rpc_api::win_daemon::{log::PipeLogger, Commands, DeviceInfo, Response};
 
 use clap::Parser;
 use tricore_common::Chip;
@@ -41,6 +41,10 @@ struct Args {
     /// A path to a file where to write log messages to (for the custom ftd2xx dll)
     #[arg(long, value_parser = existing_path)]
     ftd2xx_log_file: Option<PathBuf>,
+
+    /// Windows configuration
+    #[command(flatten)]
+    backend: Config,
 }
 
 fn existing_path(input_path: &str) -> Result<PathBuf, anyhow::Error> {
@@ -70,7 +74,9 @@ fn main() -> Result<(), anyhow::Error> {
         std::env::set_var("FTD2XX_LOGS", &path);
     }
 
-    let interface = ChipInterface::new(Config)?;
+    let mut interface = ChipInterface::new(args.backend)?;
+
+    let mut scanned_devices = None;
 
     const WAIT_TIME: Duration = Duration::from_secs(2);
     log::info!("Waiting {:?} for UDAS to start", WAIT_TIME);
@@ -96,6 +102,40 @@ fn main() -> Result<(), anyhow::Error> {
                 let f = interface.read_rtt(address, command_connection.defmt_sink())?;
                 log::trace!("Device hit debug");
                 command_connection.send_answer(Response::StackFrame(f));
+            }
+            Commands::ListDevices => {
+                log::debug!("Retrieving list of devices");
+                scanned_devices = Some(interface.list_devices()?);
+                command_connection.send_answer(Response::Devices(
+                    scanned_devices
+                        .as_ref()
+                        .unwrap()
+                        .iter()
+                        .map(|d| DeviceInfo::new(d.udas_port, d.info.acc_hw().to_owned()))
+                        .collect(),
+                ))
+            }
+            Commands::Connect(device_info) => {
+                if let Some(device_info) = device_info {
+                    log::debug!("Connecting to {device_info:?}");
+                    let devices = scanned_devices
+                        .as_ref()
+                        .ok_or_else(|| anyhow::anyhow!("Must scan first to connect"))?;
+
+                    let device_to_connect = devices
+                        .iter()
+                        .find(|device| {
+                            device.udas_port == device_info.port
+                                && device.info.acc_hw() == device_info.name.as_str()
+                        })
+                        .ok_or_else(|| anyhow::anyhow!("Could not find device {device_info:?}"))?;
+                    interface.connect(Some(device_to_connect))?;
+                    command_connection.send_answer(Response::Ok);
+                } else {
+                    log::trace!("Connecting, no specific device specified");
+                    interface.connect(None)?;
+                    command_connection.send_answer(Response::Ok);
+                }
             }
         }
     }

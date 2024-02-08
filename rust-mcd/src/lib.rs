@@ -5,6 +5,8 @@ use std::path::PathBuf;
 use anyhow::Context;
 
 pub mod breakpoint;
+pub mod config;
+pub mod connection;
 pub mod core;
 pub mod error;
 pub mod library;

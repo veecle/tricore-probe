@@ -64,7 +64,7 @@ impl<'a> ResetClass<'a> {
     pub fn get_info(&self) -> anyhow::Result<ResetInfo> {
         let mut output = mcd_rst_info_st::default();
         let result =
-            unsafe { MCD_LIB.mcd_qry_rst_class_info_f(self.core.core, self.bit_set, &mut output) };
+            unsafe { MCD_LIB.mcd_qry_rst_class_info_f(self.core.core.as_ptr(), self.bit_set, &mut output) };
 
         if result != 0 {
             Err(expect_error(Some(self.core))).with_context(|| "Library reported an error")

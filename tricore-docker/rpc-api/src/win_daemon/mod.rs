@@ -9,7 +9,9 @@ use tricore_common::backtrace::Stacktrace;
 pub enum Commands {
     WriteHex(WriteHex),
     Reset,
+    ListDevices,
     DefmtData { address: u64 },
+    Connect(Option<DeviceInfo>),
 }
 
 #[derive(Deserialize, Serialize)]
@@ -34,8 +36,28 @@ pub enum Response {
     Log(String),
     DefmtData(Vec<u8>),
     StackFrame(Stacktrace),
+    Devices(Vec<DeviceInfo>),
 }
 
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct DeviceInfo {
+    pub port: usize,
+    pub name: String,
+}
+
+impl tricore_common::Device for DeviceInfo {
+    fn hardware_description(&self) -> &str {
+        &self.name
+    }
+}
+
+impl DeviceInfo {
+    pub fn new(port: usize, name: String) -> Self {
+        DeviceInfo { port, name }
+    }
+}
+
+#[derive(Debug)]
 pub enum Error {
     Internal,
 }

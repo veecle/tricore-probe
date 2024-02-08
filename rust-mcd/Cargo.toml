@@ -9,6 +9,7 @@ lazy_static = "1.4.0"
 byteorder = "1.4.3"
 log = "0.4.17"
 anyhow = "1.0.69"
+thiserror = "1.0.48"
 
 [build-dependencies]
 bindgen = "0.69.4"

@@ -1,9 +1,9 @@
 use std::{io::Write, sync::Arc};
 
-use anyhow::Context;
+use anyhow::{bail, Context};
 use clap::Args;
 
-use rpc_api::win_daemon::{Commands, Response, WriteHex};
+use rpc_api::win_daemon::{Commands, DeviceInfo, Response, WriteHex};
 use tricore_common::{backtrace::Stacktrace, Chip};
 
 use self::{daemon::VirtualizedDaemon, ftdi::FTDIClient, pipe::DuplexPipeConnection};
@@ -31,6 +31,24 @@ pub struct ChipInterface {
 impl Chip for ChipInterface {
     type Config = DockerConfig;
 
+    type Device = DeviceInfo;
+
+    fn list_devices(&mut self) -> anyhow::Result<Vec<Self::Device>> {
+        let response = self.send_request(Commands::ListDevices)?;
+
+        let Response::Devices(devices) = response else {
+            bail!("Got wrong response {response:?} from docker, expected device list")
+        };
+
+        Ok(devices)
+    }
+
+    fn connect(&mut self, device: Option<&Self::Device>) -> anyhow::Result<()> {
+        self.send_request(Commands::Connect(device.map(|d| d.clone())))?
+            .as_result()
+            .map_err(|e| anyhow::anyhow!("Expected Ok response, got {e:?}"))
+    }
+
     fn new(enable_gui: Config) -> anyhow::Result<Self> {
         let rpc_channel_ftdi = Arc::new(DuplexPipeConnection::new());
         let pipe_for_driver = rpc_channel_ftdi.clone();
@@ -54,7 +72,7 @@ impl Chip for ChipInterface {
         })
     }
 
-    fn flash_hex(&self, ihex: String, halt_memtool: bool) -> anyhow::Result<()> {
+    fn flash_hex(&mut self, ihex: String, halt_memtool: bool) -> anyhow::Result<()> {
         log::trace!("Sending flash command to daemon");
         let request = Commands::WriteHex(WriteHex {
             elf_data: ihex,
@@ -69,7 +87,7 @@ impl Chip for ChipInterface {
     }
 
     fn read_rtt<W: Write>(
-        &self,
+        &mut self,
         rtt_control_block: u64,
         mut decoder: W,
     ) -> anyhow::Result<Stacktrace> {
@@ -90,6 +108,7 @@ impl Chip for ChipInterface {
                 Response::Ok => todo!(),
                 Response::Error => todo!(),
                 Response::Log(_) => todo!(),
+                Response::Devices(_) => todo!(),
             }
         }
     }
