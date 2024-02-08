@@ -58,8 +58,8 @@ RUN set -eux; \
     rm -rf .xwin-cache /usr/local/cargo/bin/xwin;
 
 # Retrieve the std lib for the target
-RUN rustup toolchain install nightly-2023-02-01
-RUN rustup component add rust-src --toolchain nightly-2023-02-01-x86_64-unknown-linux-gnu
+RUN rustup toolchain install nightly-2023-09-20
+RUN rustup component add rust-src --toolchain nightly-2023-09-20-x86_64-unknown-linux-gnu
 
 # Note that we're using the full target triple for each variable instead of the
 # simple CC/CXX/AR shorthands to avoid issues when compiling any C/C++ code for
