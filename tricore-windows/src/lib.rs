@@ -34,7 +34,7 @@ impl Chip for ChipInterface {
     }
 
     fn flash_hex(&self, ihex: String, halt_memtool: bool) -> anyhow::Result<()> {
-        let mut upload = MemtoolUpload::start(ihex, halt_memtool)?;
+        let mut upload = MemtoolUpload::start(ihex, halt_memtool, 0)?;
         upload.wait();
 
         Ok(())
