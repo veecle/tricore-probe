@@ -61,15 +61,34 @@ impl<'a> Core<'a> {
             .filter(move |bit| (reset_classes & (1 << *bit)) != 0)
             .map(|bit_set| ResetClass::construct_reset_class(self, bit_set)))
     }
-    pub fn query_state(&self) -> anyhow::Result<CoreInfo> {
+    /// Query the state of the core
+    pub fn query_state(&self) -> Result<CoreInfo, crate::error::Error> {
         let mut output = mcd_core_state_st::default();
         let result = unsafe { MCD_LIB.mcd_qry_state_f(self.core, &mut output) };
 
         if result != 0 {
-            return Err(expect_error(Some(self))).with_context(|| "Could not query device state");
+            return Err(expect_error(Some(self)));
         }
 
         Ok(output.into())
+    }
+
+    /// Like [Self::query_state], but will never exit gracefully
+    pub fn query_state_gracefully(
+        &self,
+        mut should_query_again: impl FnMut(&crate::error::Error) -> bool,
+    ) -> anyhow::Result<CoreInfo> {
+        loop {
+            match self.query_state() {
+                Ok(info) => return Ok(info),
+                Err(error) => {
+                    if should_query_again(&error) {
+                        continue;
+                    }
+                    return Err(error).context("Error is not tolerated");
+                }
+            }
+        }
     }
 
     fn query_payload_size(&self) -> u32 {
