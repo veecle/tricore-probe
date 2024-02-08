@@ -67,20 +67,24 @@ impl From<mcd_error_info_st> for Error {
     }
 }
 
+/// See the original header files for [crate::mcd_bindings::mcd_error_event_et]
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum EventError {
+    /// See [crate::mcd_bindings::MCD_ERR_EVT_RESET]
     Reset,
+    /// See [crate::mcd_bindings::MCD_ERR_EVT_PWRDN]
     PowerDown,
+    /// See [crate::mcd_bindings::MCD_ERR_EVT_HWFAILURE]
     HardwareFailure,
 }
 
 impl EventError {
     fn from_library_code(code: u32) -> EventError {
-        match code {
-            0x1 => Self::Reset,
-            0x2 => Self::PowerDown,
-            0x4 => Self::HardwareFailure,
-            _ => panic!("Invalid library event error code {:x}", code),
+        match code as i32 {
+            crate::mcd_bindings::MCD_ERR_EVT_RESET => Self::Reset,
+            crate::mcd_bindings::MCD_ERR_EVT_PWRDN => Self::PowerDown,
+            crate::mcd_bindings::MCD_ERR_EVT_HWFAILURE => Self::HardwareFailure,
+            _ => panic!("Unsupported library event error code {:x}", code),
         }
     }
 }
