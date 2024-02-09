@@ -26,7 +26,12 @@ impl<'a> RegisterGroups<'a> {
         let mut number_of_groups = 0;
 
         let result = unsafe {
-            MCD_LIB.mcd_qry_reg_groups_f(core.core.as_ptr(), 0, &mut number_of_groups, core::ptr::null_mut())
+            MCD_LIB.mcd_qry_reg_groups_f(
+                core.core.as_ptr(),
+                0,
+                &mut number_of_groups,
+                core::ptr::null_mut(),
+            )
         };
 
         if result != 0 {

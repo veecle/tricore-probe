@@ -1,4 +1,3 @@
-
 /// Define available config parameters, see [DynamicMCDxDAS::mcd_qry_servers_f]
 macro_rules! define_config {
     ($(($field_name: ident, $field_type:ty, $description: expr, $config_name: expr)),*) => {

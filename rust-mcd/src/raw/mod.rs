@@ -46,7 +46,7 @@ impl McdReturnError {
 }
 
 /// Utility for implementations in this module
-/// 
+///
 /// Will automatically type the return value from the library call.
 macro_rules! mcd_call {
     (unsafe { $rec:ident.$function_name:ident($($argument: expr),* $(,)?)  }) => {

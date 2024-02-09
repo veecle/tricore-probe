@@ -94,11 +94,7 @@ impl Debug for ServerInfo {
 
 impl Debug for Connection {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let result: Vec<_> = self
-            .servers
-            .iter()
-            .map(ServerInfo::from)
-            .collect();
+        let result: Vec<_> = self.servers.iter().map(ServerInfo::from).collect();
         f.debug_struct("Connection")
             .field("servers", &result)
             .finish()
