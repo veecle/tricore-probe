@@ -62,6 +62,8 @@ impl<'a> Core<'a> {
             .map(|bit_set| ResetClass::construct_reset_class(self, bit_set)))
     }
     /// Query the state of the core
+    #[allow(clippy::result_large_err)]
+    // The large result is due to the unboxed error string for the bindgen type.
     pub fn query_state(&self) -> Result<CoreInfo, crate::error::Error> {
         let mut output = mcd_core_state_st::default();
         let result = unsafe { MCD_LIB.mcd_qry_state_f(self.core, &mut output) };

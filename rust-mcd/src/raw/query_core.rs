@@ -31,8 +31,7 @@ impl DynamicMCDxDAS {
         };
 
         if result != (MCD_ERR_NONE as u32) {
-            return Err(get_error(None).unwrap())
-                .with_context(|| "Cannot query cores of the system");
+            Err(get_error(None).unwrap()).with_context(|| "Cannot query cores of the system")
         } else {
             Ok(core_info)
         }
@@ -52,8 +51,7 @@ impl DynamicMCDxDAS {
         };
 
         if result != (MCD_ERR_NONE as u32) {
-            return Err(get_error(None).unwrap())
-                .with_context(|| "Cannot query cores of the system");
+            Err(get_error(None).unwrap()).with_context(|| "Cannot query cores of the system")
         } else {
             Ok(num_cores)
         }

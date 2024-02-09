@@ -39,7 +39,7 @@ fn main() {
         .header(header_path)
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
-        .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .allowlist_type("FT_STATUS")
         .allowlist_type("LPDWORD")
         .allowlist_type("FT_HANDLE")

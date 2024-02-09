@@ -38,7 +38,7 @@ impl DefmtDecoder {
             .iter()
             .find_map(|symbol| {
                 let Ok(symbol_name) = strings.get(symbol.st_name as usize) else {
-                    return None
+                    return None;
                 };
 
                 if symbol_name != "_SEGGER_RTT" {
