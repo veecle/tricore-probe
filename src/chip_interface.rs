@@ -6,12 +6,14 @@ pub use imp::Config;
 use tricore_common::{backtrace::Stacktrace, Chip};
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "docker")] {
+    if #[cfg(all(feature = "docker", feature = "windows"))] {
+        compile_error!("Features 'docker' and 'windows' are mutually exclusive");
+    } else if #[cfg(feature = "docker")] {
         use tricore_docker as imp;
     } else if #[cfg(feature = "windows")] {
         use tricore_windows as imp;
     } else {
-        compile_error!("Features 'docker' and 'windows' are mutually exclusive");
+        compile_error!("One of the features 'docker' or 'windows' must be enabled");
     }
 }
 
