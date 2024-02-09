@@ -13,6 +13,3 @@ tempfile = "3.3.0"
 byteorder = "1.4.3"
 rust-mcd = { path = "../rust-mcd" }
 tricore-common = { path = "../tricore-common" }
-
-[build-dependencies]
-bindgen = "0.64.0"

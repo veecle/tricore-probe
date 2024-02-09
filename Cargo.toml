@@ -12,21 +12,12 @@ clap = { version = "4.1.4", features = ["derive"] }
 log = "0.4.17"
 tempfile = "3.3.0"
 env_logger = "0.10.0"
-ihex = "3.0.0"
 elf = "0.7.1"
 colored = "2.0.0"
 cfg-if = "1.0.0"
 tricore-common = { path = "tricore-common" }
-
 tricore-windows = { path = "tricore-windows", optional = true}
-
 tricore-docker = { path = "tricore-docker", optional = true}
-
-[dependencies.serde_json]
-version = "1.0.93"
-
-[dependencies.defmt-json-schema]
-version = "0.1.0"
 
 [features]
 # These features define whether a virtualized docker setup should be used as the
