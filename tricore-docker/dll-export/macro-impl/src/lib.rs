@@ -9,7 +9,11 @@ pub fn re_export(argument: Input, configuration: ExportConfiguration) -> TokenSt
     let mut start = TokenStream::new();
     for modified_function in configuration.modified_functions.iter() {
         let Some(statement) = argument.get_properties(&modified_function.name.to_string()) else {
-            return Error::new(modified_function.name.span(), "Function not found in definition").to_compile_error()
+            return Error::new(
+                modified_function.name.span(),
+                "Function not found in definition",
+            )
+            .to_compile_error();
         };
         all_function_names.retain_mut(|f| f.name != modified_function.name);
 

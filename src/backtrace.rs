@@ -140,7 +140,7 @@ impl<'a> Addr2LineRegistry<'a> {
     fn get_address_info(&mut self, address: u32) -> anyhow::Result<Addr2LineInfo> {
         let Some(info) = self.registry.get(&address) else {
             self.load([address].into_iter())?;
-            return Ok(self.registry.get(&address).unwrap().clone())
+            return Ok(self.registry.get(&address).unwrap().clone());
         };
 
         Ok(info.clone())
@@ -214,7 +214,7 @@ impl TrapMetadata {
             .iter()
             .find_map(|symbol| {
                 let Ok(symbol_name) = strings.get(symbol.st_name as usize) else {
-                    return None
+                    return None;
                 };
 
                 if !VALID_SYMBOLS.contains(&symbol_name) {

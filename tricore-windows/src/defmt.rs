@@ -123,7 +123,7 @@ pub fn decode_rtt<W: Write>(
                     (&*core)
                         .read_current()
                         .with_context(|| "Cannot read backtrace from device")
-                        .map(|backtrace| HaltReason::DebugHit(backtrace)),
+                        .map(HaltReason::DebugHit),
                 );
             }
 

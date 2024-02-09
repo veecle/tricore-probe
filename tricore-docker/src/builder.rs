@@ -139,7 +139,7 @@ fn kill_docker_with_name(name: &str) -> anyhow::Result<()> {
     Command::new("docker")
         .arg("container")
         .arg("kill")
-        .arg(&name)
+        .arg(name)
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
