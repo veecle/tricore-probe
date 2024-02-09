@@ -10,7 +10,7 @@ impl DynamicMCDxDAS {
 
         mcd_call!(unsafe {
             self.mcd_qry_servers_f(
-                host.as_ptr() as *const i8,
+                host.as_ptr(),
                 1,
                 0,
                 &mut num_open_servers,
@@ -29,7 +29,7 @@ impl DynamicMCDxDAS {
 
         mcd_call!(unsafe {
             self.mcd_qry_servers_f(
-                host.as_ptr() as *const i8,
+                host.as_ptr(),
                 1,
                 0,
                 &mut result_length,
@@ -49,7 +49,7 @@ impl DynamicMCDxDAS {
         mcd_call!(unsafe {
             self.mcd_open_server_f(
                 &system_key as *const i8,
-                config.as_ptr() as *const i8,
+                config.as_ptr(),
                 &mut server_info as _,
             )
         })?;

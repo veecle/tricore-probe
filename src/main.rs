@@ -128,7 +128,7 @@ fn existing_path(input_path: &str) -> anyhow::Result<PathBuf> {
 }
 
 fn pretty_print_devices<D: tricore_common::Device>(devices: &Vec<D>) {
-    if devices.len() == 0 {
+    if devices.is_empty() {
         println!("No devices available");
         return;
     }

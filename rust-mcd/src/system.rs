@@ -29,8 +29,9 @@ impl System {
     pub(crate) fn connect(server_information: &ServerInfo) -> anyhow::Result<System> {
         log::trace!("Connecting to {server_information:?}");
 
-        let mut configuration = ServerConfig::default();
-        configuration.acc_hw = Some(server_information.acc_hw().to_owned());
+        let configuration = ServerConfig {
+            acc_hw: Some(server_information.acc_hw().to_owned()),
+        };
 
         let configuration = configuration.as_config_string();
 

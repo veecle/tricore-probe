@@ -44,7 +44,7 @@ impl Chip for ChipInterface {
     }
 
     fn connect(&mut self, device: Option<&Self::Device>) -> anyhow::Result<()> {
-        self.send_request(Commands::Connect(device.map(|d| d.clone())))?
+        self.send_request(Commands::Connect(device.cloned()))?
             .as_result()
             .map_err(|e| anyhow::anyhow!("Expected Ok response, got {e:?}"))
     }

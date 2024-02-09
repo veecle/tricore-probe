@@ -24,7 +24,7 @@ impl Connection {
 
     /// List all servers available in this connection
     pub fn servers(&self) -> impl Iterator<Item = ServerInfo> + '_ {
-        self.servers.iter().map(|info| ServerInfo::from(info))
+        self.servers.iter().map(ServerInfo::from)
     }
 
     /// Number of servers available
@@ -97,7 +97,7 @@ impl Debug for Connection {
         let result: Vec<_> = self
             .servers
             .iter()
-            .map(|server| ServerInfo::from(server))
+            .map(ServerInfo::from)
             .collect();
         f.debug_struct("Connection")
             .field("servers", &result)

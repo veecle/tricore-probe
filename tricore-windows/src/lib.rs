@@ -52,7 +52,7 @@ impl Chip for ChipInterface {
     }
 
     fn connect(&mut self, device: Option<&Self::Device>) -> anyhow::Result<()> {
-        self.device = device.map(|d| d.clone());
+        self.device = device.copied();
 
         Ok(())
     }
