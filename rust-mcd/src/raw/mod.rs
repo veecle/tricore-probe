@@ -45,24 +45,6 @@ impl McdReturnError {
     }
 }
 
-/// Utility for implementations in this module
-///
-/// Will automatically type the return value from the library call.
-macro_rules! mcd_call {
-    (unsafe { $rec:ident.$function_name:ident($($argument: expr),* $(,)?)  }) => {
-        {
-            let result = unsafe { $rec.$function_name($($argument),*)};
-            let result = $crate::raw::McdReturnError::from_library_call(result);
-
-            if let Err(err) = &result {
-                log::warn!("{} failed with error {err}", stringify!($function_name))
-            }
-
-            result
-        }
-    };
-}
-
 pub mod query_core;
 pub mod query_server;
 pub mod query_system;

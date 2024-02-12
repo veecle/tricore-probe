@@ -20,7 +20,7 @@ impl DynamicMCDxDAS {
         let mut core_info = vec![mcd_core_con_info_st::default(); core_query_count as usize];
         let mut num_cores = core_query_count;
 
-        mcd_call!(unsafe {
+        McdReturnError::from_library_call(unsafe {
             self.mcd_qry_cores_f(
                 connection_info as *const mcd_core_con_info_st,
                 start_index,
@@ -41,7 +41,7 @@ impl DynamicMCDxDAS {
     ) -> Result<u32, McdReturnError> {
         let mut num_cores = 0;
 
-        mcd_call!(unsafe {
+        McdReturnError::from_library_call(unsafe {
             self.mcd_qry_cores_f(
                 connection_info as *const mcd_core_con_info_st,
                 0,
@@ -60,7 +60,9 @@ impl DynamicMCDxDAS {
     ) -> Result<NonNull<mcd_core_st>, McdReturnError> {
         let mut core_reference = core::ptr::null_mut();
 
-        mcd_call!(unsafe { self.mcd_open_core_f(core_connection, &mut core_reference) })?;
+        McdReturnError::from_library_call(unsafe {
+            self.mcd_open_core_f(core_connection, &mut core_reference)
+        })?;
 
         Ok(NonNull::new(core_reference).unwrap())
     }
