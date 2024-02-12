@@ -58,7 +58,10 @@ impl ServerInfo {
         // SAFETY
         // i8 and u8 have the same memory layout
         let acc_hw = unsafe { std::mem::transmute::<&[i8], &[u8]>(&self.inner.acc_hw) };
-        CStr::from_bytes_with_nul(acc_hw).unwrap().to_str().unwrap()
+        CStr::from_bytes_until_nul(acc_hw)
+            .unwrap()
+            .to_str()
+            .unwrap()
     }
 
     /// Returns the description the server itself.
@@ -66,7 +69,10 @@ impl ServerInfo {
         // SAFETY
         // i8 and u8 have the same memory layout
         let server = unsafe { std::mem::transmute::<&[i8], &[u8]>(&self.inner.server) };
-        CStr::from_bytes_with_nul(server).unwrap().to_str().unwrap()
+        CStr::from_bytes_until_nul(server)
+            .unwrap()
+            .to_str()
+            .unwrap()
     }
 
     /// TODO what is the semantics of this?
@@ -75,7 +81,7 @@ impl ServerInfo {
         // i8 and u8 have the same memory layout
         let system_instance =
             unsafe { std::mem::transmute::<&[i8], &[u8]>(&self.inner.system_instance) };
-        CStr::from_bytes_with_nul(system_instance)
+        CStr::from_bytes_until_nul(system_instance)
             .unwrap()
             .to_str()
             .unwrap()
