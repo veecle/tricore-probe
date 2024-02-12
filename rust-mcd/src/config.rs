@@ -12,12 +12,10 @@ impl ServerConfig {
     /// Returns this configuration as a string compatible to the MCD library
     pub fn as_config_string(&self) -> std::ffi::CString {
         let mut composed_string = String::new();
-        
+
         if let Some(value) = self.acc_hw.as_ref() {
             composed_string += &format!("McdAccHw=\"{value}\"\n");
         }
-
-        composed_string += "\0";
 
         std::ffi::CString::new(composed_string).unwrap()
     }
