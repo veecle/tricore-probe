@@ -64,6 +64,6 @@ impl DynamicMCDxDAS {
             self.mcd_open_core_f(core_connection, &mut core_reference)
         })?;
 
-        Ok(NonNull::new(core_reference).unwrap())
+        Ok(NonNull::new(core_reference).expect("Library call indicated success"))
     }
 }
