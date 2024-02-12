@@ -1,4 +1,4 @@
-//! Rusty wrappers around raw MCD bindings
+//! Implements rusty wrappers around raw MCD bindings.
 //!
 //! This should get rid of most C-like calls, while the overall MCD semantic still remains the same.
 //! We refrain from introducing new types in this module if possible.
@@ -9,7 +9,7 @@ use crate::mcd_bindings::{
     MCD_RET_ACT_RESERVED_LO,
 };
 
-/// Simple wrapper around MCD API return codes, see [mcd_return_et]
+/// This is a rusty wrapper around MCD API return codes, see [mcd_return_et].
 #[derive(Debug, PartialEq, thiserror::Error)]
 pub enum McdReturnError {
     #[error("Try to call the function again")]
@@ -25,7 +25,7 @@ pub enum McdReturnError {
 }
 
 impl McdReturnError {
-    /// Parse the return code from an MCD API call into a [Result]
+    /// Parses the return code from an MCD API call into a [Result].
     pub fn from_library_call(code: mcd_return_et) -> Result<(), Self> {
         match code {
             _ if code == MCD_RET_ACT_NONE as u32 => Ok(()),

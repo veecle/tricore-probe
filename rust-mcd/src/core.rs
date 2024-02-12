@@ -64,7 +64,7 @@ impl<'a> Core<'a> {
             .map(|bit_set| ResetClass::construct_reset_class(self, bit_set)))
     }
 
-    /// Query the state of the core
+    /// Queries the state of the core.
     #[allow(clippy::result_large_err)]
     // The large result is due to the unboxed error string for the bindgen type.
     pub fn query_state(&self) -> Result<CoreInfo, crate::error::Error> {
@@ -78,7 +78,7 @@ impl<'a> Core<'a> {
         Ok(output.into())
     }
 
-    /// Like [Self::query_state], but will never exit gracefully
+    /// Behaves like [Self::query_state], but it will never exit gracefully.
     pub fn query_state_gracefully(
         &self,
         mut should_query_again: impl FnMut(&crate::error::Error) -> bool,

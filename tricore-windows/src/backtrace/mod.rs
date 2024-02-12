@@ -1,4 +1,4 @@
-//! This module defines structures to create a backtrace using the [rust_mcd] library
+//! Defines structures to create a backtrace using the [rust_mcd] library.
 
 use anyhow::{Context, Ok};
 use rust_mcd::core::Core;
@@ -9,15 +9,15 @@ use crate::backtrace::pcxi::PCXIExt;
 mod csa;
 mod pcxi;
 
-/// Extension trait to obtain a stacktrace
+/// This is an extension trait for [Core].
 pub trait StacktraceExt: Sized {
-    /// Read the stacktrace for the given core
+    /// Reads the stacktrace from the given core.
     ///
     /// This function is available on the [Core] type.
     fn read_current(&self) -> anyhow::Result<Stacktrace>;
 }
 
-impl<'a> StacktraceExt for &'a Core<'a> {
+impl<'a> StacktraceExt for Core<'a> {
     fn read_current(&self) -> anyhow::Result<Stacktrace> {
         let groups = self.register_groups()?;
         let group = groups.get_group(0)?;

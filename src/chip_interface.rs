@@ -28,19 +28,19 @@ impl<C: Chip> ChipInterfaceImpl<C>
 where
     C::Device: Debug,
 {
-    /// Initiate a new connection to a chip
+    /// Initiates a new connection to a chip.
     pub fn new(interface_configuration: C::Config) -> anyhow::Result<Self> {
         Ok(ChipInterfaceImpl {
             implementation: C::new(interface_configuration)?,
         })
     }
 
-    /// Like [Chip::list_devices]
+    /// Behaves like [Chip::list_devices].
     pub fn list_devices(&mut self) -> anyhow::Result<Vec<C::Device>> {
         self.implementation.list_devices()
     }
 
-    /// Like [Chip::connect]
+    /// Behaves like [Chip::connect].
     pub fn connect(&mut self, device: Option<&C::Device>) -> anyhow::Result<()> {
         if let Some(device) = device {
             log::debug!("Connecting to device {device:?}");
@@ -51,7 +51,7 @@ where
         self.implementation.connect(device)
     }
 
-    /// Like [Chip::flash_hex], but the binary is specified as a path to an elf
+    /// Behaves like [Chip::flash_hex], but the binary is specified as a path to an elf
     /// file instead of provided as Intel hex in memory.
     pub fn flash_elf(&mut self, elf_file: &Path, halt_memtool: bool) -> anyhow::Result<()> {
         log::info!("Converting elf {} to hex file", elf_file.display());
@@ -61,7 +61,7 @@ where
         self.implementation.flash_hex(ihex, halt_memtool)
     }
 
-    /// Like [Chip::read_rtt]
+    /// Behaves like [Chip::read_rtt].
     pub fn read_rtt<W: Write>(
         &mut self,
         rtt_control_block_address: u64,

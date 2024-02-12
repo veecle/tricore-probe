@@ -188,14 +188,14 @@ impl<'a> Addr2LineRegistry<'a> {
     }
 }
 
-/// Captures information about the currently installed trap tables
+/// Captures information about the currently installed trap tables.
 struct TrapMetadata {
-    /// This field will contain the base address of the trap table if one was found
+    /// Contains the base address of the trap table if one was found.
     trap_symbol: Option<u32>,
 }
 
 impl TrapMetadata {
-    /// Extract information about available trap tables from the given elf file
+    /// Extracts information about available trap tables from the given elf file.
     ///
     /// If this function call fails, [TrapMetadata::empty] may be used to create
     /// a stub variant of this structure.
@@ -236,7 +236,7 @@ impl TrapMetadata {
         })
     }
 
-    /// Creates an instance with no metadata associated to it
+    /// Creates an instance with no metadata associated to it.
     ///
     /// When [`trap_class`][Self::trap_class] is called on such an instance,
     /// it will always return [None].
@@ -244,8 +244,8 @@ impl TrapMetadata {
         TrapMetadata { trap_symbol: None }
     }
 
-    /// Based on the metadata in this structure, attempt to identify the trap
-    /// class based on the given address
+    /// Based on the metadata in this structure, attempts to identify the trap
+    /// class based on the given address.
     ///
     /// This address is usually the program counter of the program when it hit the trap.
     fn trap_class(&self, address: u32) -> Option<u8> {

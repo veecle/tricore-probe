@@ -3,7 +3,7 @@ use crate::mcd_bindings::{mcd_core_con_info_st, DynamicMCDxDAS};
 use super::McdReturnError;
 
 impl DynamicMCDxDAS {
-    /// See [DynamicMCDxDAS::mcd_qry_systems_f], with num_systems set to 0
+    /// Behaves like [DynamicMCDxDAS::mcd_qry_systems_f], with num_systems set to 0.
     pub fn query_system_count(&self) -> Result<u32, McdReturnError> {
         let mut num_systems = 0;
 
@@ -14,7 +14,7 @@ impl DynamicMCDxDAS {
         Ok(num_systems)
     }
 
-    /// See [DynamicMCDxDAS::mcd_qry_systems_f]
+    /// Behaves like [DynamicMCDxDAS::mcd_qry_systems_f].
     pub fn query_systems(
         &self,
         num_systems: u32,

@@ -7,7 +7,7 @@ use std::{
 
 use anyhow::{bail, Context};
 
-/// Spawns a DAS instance
+/// Spawns a DAS instance.
 pub fn run_console() -> anyhow::Result<()> {
     let das_home = PathBuf::from(
         std::env::var("DAS_HOME").context("DAS_HOME not defined, is DAS installed?")?,

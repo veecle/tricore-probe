@@ -17,34 +17,40 @@ use env_logger::{Builder, Target};
 use log::LevelFilter;
 use tricore_common::Device;
 
-/// Simple program to flash and interface with tricore chips
+/// Simple program to flash and interface with tricore chips.
 #[derive(Parser, Debug)]
 struct Args {
-    /// Whether flashing should be skipped
+    /// Set when flashing should be skipped.
     #[arg(long, default_value_t = false)]
     no_flash: bool,
 
-    /// Set this flag to print a list of available devices and exit
+    /// Set this flag to print a list of available devices and exit.
     #[arg(long, default_value_t = false)]
     list_devices: bool,
 
+    /// Target device to be used.
+    ///
+    /// When not specified, the tool will pick an available device if exactly one
+    /// device is available.
     #[arg(short, long)]
     device: Option<String>,
 
-    /// Path to the binary
+    /// Path to the binary.
     #[arg(value_parser = existing_path)]
     elf: PathBuf,
 
-    /// Configuration for the backend
+    /// Configuration for the backend.
     #[command(flatten)]
     backend: chip_interface::Config,
 
-    /// Stop after setting up the memtool. Memtool will stay open and tricore-probe
-    /// will halt until memtool is closed by the user
+    /// Stop after setting up the memtool.
+    ///
+    /// Memtool will stay open and tricore-probe will halt until memtool is
+    /// closed by the user.
     #[arg(long, default_value_t = false)]
     halt_memtool: bool,
 
-    /// Sets the log level
+    /// Configures the log level.
     #[arg(short, long, value_enum, required = false, default_value_t = LogLevel::Warn)]
     log_level: LogLevel,
 }

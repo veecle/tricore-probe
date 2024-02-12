@@ -3,14 +3,14 @@ use std::process::{Child, Command};
 use anyhow::Context;
 use tempfile::TempDir;
 
-/// Models an upload of a binary with Memtool
+/// Models an upload of a binary with Memtool.
 pub struct MemtoolUpload {
     spawned: Child,
     _temporary_files: TempDir,
 }
 
 impl MemtoolUpload {
-    /// Upload a binary to the default device in Memtool
+    /// Uploads a binary to the default device in Memtool.
     ///
     /// It generates a configuration file and uses Memtool's batch functionality to
     /// instruct the program to flash all available sections to the device.
@@ -65,7 +65,7 @@ impl MemtoolUpload {
         })
     }
 
-    /// Wait on the process to finish
+    /// Waits on the upload process to finish.
     ///
     /// This can take a second, but if the tool fails execution it will hang here.
     /// This can happen when the flash layout is broken or when another debugger
@@ -81,7 +81,7 @@ impl MemtoolUpload {
     }
 }
 
-/// Create a Memtool configuration
+/// Creates a Memtool configuration.
 ///
 /// The configuration file is templated based on the default configuration in Memtool
 /// from the TC37xA family, but the DAS port can be selected freely.

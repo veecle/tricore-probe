@@ -6,7 +6,7 @@ use anyhow::{bail, Context, Ok};
 use defmt::{decode_rtt, HaltReason};
 use flash::MemtoolUpload;
 use rust_mcd::{
-    connection::{Connection, ServerInfo},
+    connection::{Scan, ServerInfo},
     reset::ResetClass,
     system::System,
 };
@@ -34,7 +34,7 @@ impl tricore_common::Device for DeviceSelection {
 
 pub struct ChipInterface {
     device: Option<DeviceSelection>,
-    connection: Option<Connection>,
+    scan_result: Option<Scan>,
 }
 
 impl Chip for ChipInterface {
@@ -68,7 +68,7 @@ impl Chip for ChipInterface {
         rust_mcd::library::init();
         Ok(ChipInterface {
             device: None,
-            connection: None,
+            scan_result: None,
         })
     }
 
@@ -122,9 +122,10 @@ impl ChipInterface {
         Ok(())
     }
 
-    /// Choose the best device available
+    /// Returns the selected device.
     ///
-    /// If no device has been selected previously but only one is available, this device will be choosen
+    /// This function will not fail if no selection has been made, but exactly one
+    /// device is available.
     fn get_selected_device(&mut self) -> anyhow::Result<&DeviceSelection> {
         if self.device.is_none() {
             let connection = self.attempt_connection()?;
@@ -154,12 +155,12 @@ impl ChipInterface {
         Ok(self.device.as_ref().unwrap())
     }
 
-    fn attempt_connection(&mut self) -> anyhow::Result<&Connection> {
-        if self.connection.is_none() {
-            self.connection = Some(Connection::scan()?);
+    fn attempt_connection(&mut self) -> anyhow::Result<&Scan> {
+        if self.scan_result.is_none() {
+            self.scan_result = Some(Scan::new()?);
         }
 
-        Ok(self.connection.as_ref().unwrap())
+        Ok(self.scan_result.as_ref().unwrap())
     }
 
     fn get_system(&mut self) -> anyhow::Result<System> {

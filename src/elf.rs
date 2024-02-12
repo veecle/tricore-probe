@@ -1,13 +1,13 @@
-//! Utilities to work with elf files
+//! Hosts utilities to work with elf files.
 
 use std::process::{Command, Stdio};
 
 use anyhow::Context;
 use tempfile::TempDir;
 
-/// Interpret the given data as a hex file and convert it to the Intel hex format
+/// Interprets the given data as a hex file and returns it in Intel hex format.
 ///
-/// This function relies on the gnu utility 'objcopy' to be installed on the system
+/// This function relies on the gnu utility 'objcopy' to be installed on the system.
 pub fn elf_to_hex(data: &[u8]) -> anyhow::Result<String> {
     let temporary_directory = TempDir::new().context("Failed to set up temporary directory")?;
     let input_path = temporary_directory.path().join("input.elf");

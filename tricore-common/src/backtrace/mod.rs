@@ -5,7 +5,7 @@ use self::csa::{SavedContext, UpperContext};
 pub mod csa;
 pub mod pcxi;
 
-/// A stacktrace, consisting of the saved contexts in the CSA link chain
+/// Models a stacktrace, e.g. a snapshot of call frames at runtime.
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Stacktrace {

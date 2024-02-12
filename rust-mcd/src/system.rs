@@ -12,13 +12,13 @@ use crate::{
 
 use super::core::Core;
 
-/// A single system (e.g. chip)
+/// This structure represents a System-on-Chip (SoC).
 pub struct System {
     core_connection: Vec<mcd_core_con_info_st>,
 }
 
 impl System {
-    /// Connect to a system
+    /// Attempts to connect to a system based on the given information.
     ///
     /// This currently only supports a single server with a single system,
     /// so this implementation will fail if multiple DAS servers are available or
@@ -71,10 +71,10 @@ impl System {
         })
     }
 
-    /// Open a connection to a core of this system
+    /// Opens a connection to a core of this system.
     ///
     /// # Panic
-    /// This method will panic if the index exceeds the number of cores available
+    /// This method will panic if the index exceeds the number of cores available.
     pub fn get_core(&self, core_index: usize) -> Result<Core, anyhow::Error> {
         // I observed that in certain circumstances opening a core can fail (mcd_open_core_f
         // returns 2), so we retry as suggested by the MCD library documentation
@@ -90,7 +90,7 @@ impl System {
         bail!("Could not open core after {TRIES} tries");
     }
 
-    /// The number of cores connected to this system
+    /// Returns the number of cores available in this this system.
     pub fn core_count(&self) -> usize {
         self.core_connection.len()
     }

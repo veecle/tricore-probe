@@ -1,4 +1,4 @@
-//! Handles decoding of defmt byte streams, see [DefmtDecoder]
+//! Handles decoding of defmt byte streams, see [DefmtDecoder].
 use std::{
     fs,
     io::Write,
@@ -10,7 +10,7 @@ use anyhow::Context;
 
 use elf::{endian::AnyEndian, ElfBytes};
 
-/// A structure that is able to decode a byte stream as defmt data
+/// This structure handles decoding a byte stream as defmt data.
 ///
 /// This is implemented by spawning `defmt-print` and piping the output to the
 /// parents stdout. Note that this object implements [Write], so input data is
@@ -21,7 +21,9 @@ pub struct DefmtDecoder {
 }
 
 impl DefmtDecoder {
-    /// Spawn a new process with the `defmt-print` utility
+    /// Starts a new decoding process.
+    ///
+    /// Output will be written to the current standard output.
     ///
     /// This function will fail if the user did not install the program, e.g. via
     /// `cargo install defmt-print`.
@@ -69,9 +71,9 @@ impl DefmtDecoder {
         })
     }
 
-    /// Obtain the address of the RTT control block of the underlying binary
+    /// Returns the address of the RTT control block used by the underlying binary.
     ///
-    /// TODO this method does not really belong to this class
+    /// TODO this method does not really belong to this class.
     pub fn rtt_control_block_address(&self) -> u64 {
         self.rtt_symbol_address
     }

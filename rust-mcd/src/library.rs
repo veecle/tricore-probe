@@ -6,7 +6,7 @@ use crate::{
     MCD_LIB,
 };
 
-/// Initialize the library
+/// Initializes the MCD library.
 pub fn init() {
     log::debug!("Initializing MCD library");
     let mut author = [0i8; 32];

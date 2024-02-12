@@ -44,16 +44,15 @@ impl<'a> Debug for ResetClass<'a> {
 }
 
 impl<'a> ResetClass<'a> {
-    /// MCD internal representation of this reset class
+    /// Returns the MCD internal representation of this reset class.
     pub(crate) fn as_vector(&self) -> u32 {
         1u32 << self.bit_set
     }
 
-    /// Construct a reset class from a known reset class
+    /// Creates a reset class from a known reset class.
     ///
     /// The user should make sure that the class also exists for the specified core,
-    /// otherwise this might create errors later in the execution which are not
-    /// easy to track down
+    /// otherwise this might create errors later in the execution.
     pub fn construct_reset_class(core: &'a Core<'a>, class: u8) -> ResetClass<'a> {
         ResetClass {
             bit_set: class,

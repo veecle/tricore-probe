@@ -5,7 +5,7 @@ use crate::mcd_bindings::{mcd_core_con_info_st, mcd_core_st, DynamicMCDxDAS};
 use super::McdReturnError;
 
 impl DynamicMCDxDAS {
-    /// See [Self::mcd_qry_cores_f]
+    /// Behaves like [Self::mcd_qry_cores_f].
     pub fn query_core_info(
         &self,
         connection_info: &mcd_core_con_info_st,
@@ -34,7 +34,7 @@ impl DynamicMCDxDAS {
         Ok(core_info)
     }
 
-    /// See [Self::mcd_qry_cores_f], with `num_devices` set to 0
+    /// Behaves like [Self::mcd_qry_cores_f], with `num_devices` set to 0.
     pub fn query_core_count(
         &self,
         connection_info: &mcd_core_con_info_st,
@@ -53,7 +53,7 @@ impl DynamicMCDxDAS {
         Ok(num_cores)
     }
 
-    /// See [Self::mcd_open_core_f]
+    /// Behaves like [Self::mcd_open_core_f].
     pub fn open_core(
         &self,
         core_connection: &mcd_core_con_info_st,

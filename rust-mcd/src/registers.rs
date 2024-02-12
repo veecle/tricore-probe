@@ -1,4 +1,4 @@
-//! Abstracts over registers in a [crate::core::Core]
+//! Abstracts over registers in a [crate::core::Core].
 //!
 //! Registers are grouped in multiple groups within a core.
 
@@ -15,7 +15,8 @@ use crate::{
 
 use super::core::Core;
 
-/// Specifies all register groups in the core
+/// A representation of all groups of registers that are associated to a
+/// core.
 pub struct RegisterGroups<'a> {
     core: &'a Core<'a>,
     register_groups: Vec<mcd_register_group_st>,
@@ -61,7 +62,7 @@ impl<'a> RegisterGroups<'a> {
         })
     }
 
-    /// Get a group from this list of groups
+    /// Obtains the specific group from the known groups.
     ///
     /// TODO Add/Reference documentation what the signifcance of index is. For
     /// a trivial setup with the Aurix Lite Kit v2 connected over MicroUSB, this
@@ -119,7 +120,7 @@ pub struct RegisterGroup<'a> {
 }
 
 impl<'a> RegisterGroup<'a> {
-    /// Iterate over all registers in this group
+    /// Returns an iterator over all registers in this group.
     pub fn registers(&'a self) -> RegisterIterator<'a> {
         RegisterIterator {
             core: self.core,
@@ -127,13 +128,13 @@ impl<'a> RegisterGroup<'a> {
         }
     }
 
-    /// Obtain the register with the given name from this group
+    /// Returns the register with the given name from this group if found.
     pub fn register(&'a self, name: &str) -> Option<Register<'a>> {
         self.registers().find(|r| r.name() == name)
     }
 }
 
-/// Allows to iterate over registers in a [RegisterGroup]
+/// An Iterator over registers in a [RegisterGroup].
 pub struct RegisterIterator<'a> {
     core: &'a Core<'a>,
     iter: std::slice::Iter<'a, mcd_register_info_st>,
@@ -150,14 +151,14 @@ impl<'a> Iterator for RegisterIterator<'a> {
     }
 }
 
-/// Represents a register within a [RegisterGroup]
+/// A representation of a register within a [RegisterGroup].
 pub struct Register<'a> {
     core: &'a Core<'a>,
     register: &'a mcd_register_info_st,
 }
 
 impl<'a> Register<'a> {
-    /// Read the value of this register
+    /// Returns the current value of the register in the target.
     pub fn read(&self) -> anyhow::Result<u32> {
         let data = self.core.read_bytes(self.register.addr.address, 4)?;
         let mut cursor = Cursor::new(data);
@@ -166,7 +167,8 @@ impl<'a> Register<'a> {
             .with_context(|| "could not transform data to register value")
     }
 
-    /// The name of the register as reported from the debug controller
+    /// Returns the name of the register as reported from the debug
+    /// controller.
     pub fn name(&self) -> String {
         unsafe { CStr::from_ptr(&self.register.regname[0] as *const i8) }
             .to_str()

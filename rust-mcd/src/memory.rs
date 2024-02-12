@@ -1,8 +1,7 @@
-//! Abstracts over memory spaces and blocks within
+//! Abstracts over memory spaces and blocks within.
 //!
 //! TODO The implementations in this module are poorly documented (due to my
 //! poor understanding of the concept) and mostly untested.
-//!
 #![allow(dead_code)]
 use std::{ffi::CStr, fmt::Debug, ptr};
 
@@ -100,7 +99,8 @@ impl<'a> MemorySpace<'a> {
             .collect())
     }
 
-    /// The name of this space as reported from the debug controller
+    /// Returns the name of this space as reported from the debug
+    /// controller.
     pub fn get_name(&self) -> &str {
         unsafe { CStr::from_ptr(&self.inner.mem_space_name[0] as *const i8) }
             .to_str()
@@ -134,7 +134,7 @@ impl<'a> MemoryBlock<'a> {
         }
     }
 
-    /// The name of this block as reported from the debug controller
+    /// Returns the name of this block as reported from the debug controller.
     pub fn name(&self) -> &str {
         unsafe { CStr::from_ptr(&self.inner.mem_block_name[0] as *const i8) }
             .to_str()

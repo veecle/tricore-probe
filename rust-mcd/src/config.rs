@@ -1,4 +1,4 @@
-/// Filter to query for servers, check [crate::mcd_bindings::DynamicMCDxDAS::mcd_open_server_f]
+/// Filter to query for servers, check [crate::mcd_bindings::DynamicMCDxDAS::mcd_open_server_f].
 ///
 /// TODO: Various fields are missing, add when needed.
 #[derive(Default, Debug)]
@@ -9,7 +9,7 @@ pub struct ServerConfig {
 }
 
 impl ServerConfig {
-    /// Returns this configuration as a string compatible to the MCD library
+    /// Returns the configuration as a string compatible to the MCD library.
     pub fn as_config_string(&self) -> std::ffi::CString {
         let mut composed_string = String::new();
 

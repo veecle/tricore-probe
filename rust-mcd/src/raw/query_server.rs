@@ -3,7 +3,7 @@ use crate::mcd_bindings::{mcd_server_info_st, mcd_server_st, DynamicMCDxDAS};
 use super::McdReturnError;
 
 impl DynamicMCDxDAS {
-    /// See [DynamicMCDxDAS::mcd_qry_servers_f], with num_servers set to 0
+    /// Behaves like [DynamicMCDxDAS::mcd_qry_servers_f], with num_servers set to 0.
     pub fn query_server_count(&self, host: &std::ffi::CStr) -> Result<u32, McdReturnError> {
         let mut num_open_servers = 0u32;
 
@@ -20,7 +20,7 @@ impl DynamicMCDxDAS {
         Ok(num_open_servers)
     }
 
-    /// See [DynamicMCDxDAS::mcd_qry_servers_f]
+    /// Behaves like [DynamicMCDxDAS::mcd_qry_servers_f].
     pub fn query_server_infos(
         &self,
         host: &std::ffi::CStr,
@@ -39,7 +39,7 @@ impl DynamicMCDxDAS {
         Ok(result)
     }
 
-    /// See [DynamicMCDxDAS::mcd_open_server_f]
+    /// Behaves like [DynamicMCDxDAS::mcd_open_server_f].
     pub fn open_server(
         &self,
         config: &std::ffi::CStr,
