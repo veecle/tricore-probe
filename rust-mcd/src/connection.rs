@@ -36,7 +36,7 @@ impl Connection {
 /// Information a server
 #[derive(Clone, Copy)]
 pub struct ServerInfo {
-    pub(crate) inner: mcd_server_info_st,
+    inner: mcd_server_info_st,
 }
 
 impl ServerInfo {
