@@ -2,6 +2,7 @@ use std::{fmt::Debug, fs, io::Write, path::Path};
 
 use crate::elf::elf_to_hex;
 
+use anyhow::Context;
 pub use imp::Config;
 use tricore_common::{backtrace::Stacktrace, Chip};
 
@@ -54,8 +55,8 @@ where
     /// file instead of provided as Intel hex in memory.
     pub fn flash_elf(&mut self, elf_file: &Path, halt_memtool: bool) -> anyhow::Result<()> {
         log::info!("Converting elf {} to hex file", elf_file.display());
-        let elf_data = fs::read(elf_file).unwrap();
-        let ihex = elf_to_hex(&elf_data)?;
+        let elf_data = fs::read(elf_file).context("Cannot load elf file")?;
+        let ihex = elf_to_hex(&elf_data).context("Cannot convert elf to hex file")?;
         log::info!("Flashing hex file");
         self.implementation.flash_hex(ihex, halt_memtool)
     }

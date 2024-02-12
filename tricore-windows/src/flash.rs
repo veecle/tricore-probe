@@ -1,8 +1,4 @@
-use std::{
-    fs::File,
-    io::Write,
-    process::{Child, Command},
-};
+use std::process::{Child, Command};
 
 use anyhow::Context;
 use tempfile::TempDir;
@@ -25,17 +21,18 @@ impl MemtoolUpload {
     ///
     /// Note that the binary must not contain unflashable sections.
     pub fn start(ihex: String, halt_memtool: bool, udas_port: usize) -> anyhow::Result<Self> {
-        let temporary_files = TempDir::new().unwrap();
+        let temporary_files =
+            TempDir::new().context("Cannot create temporary directory for memtool input")?;
 
         let input_hex_path = temporary_files.path().join("input.hex");
-        let mut input_hex = File::create(&input_hex_path)?;
-        input_hex.write_all(ihex.as_bytes()).unwrap();
-        input_hex.flush().unwrap();
+
+        std::fs::write(&input_hex_path, ihex)
+            .context("Cannot write create temporary input hex file")?;
 
         let temporary_memtool_config_path = temporary_files.path().join("temp_config.cfg");
-        let mut temporary_memtool_config = File::create(&temporary_memtool_config_path)?;
-        write_cfg(&mut temporary_memtool_config, udas_port).unwrap();
-        temporary_memtool_config.flush().unwrap();
+
+        std::fs::write(&temporary_memtool_config_path, create_cfg(udas_port))
+            .context("Cannot write create temporary memtool configuration file")?;
 
         let mtb = if !halt_memtool {
             format!("connect\nopen_file {}\nselect_all_sections\nadd_selected_sections\nprogram\ndisconnect\nexit", input_hex_path.display())
@@ -47,9 +44,9 @@ impl MemtoolUpload {
         };
 
         let batch_file_path = temporary_files.path().join("batch.mtb");
-        let mut batch_file = File::create(&batch_file_path)?;
-        batch_file.write_all(mtb.as_bytes()).unwrap();
-        batch_file.flush().unwrap();
+
+        std::fs::write(&batch_file_path, mtb)
+            .context("Cannot create temporary memtool batch file")?;
 
         let mut process = Command::new(env!("MEMTOOL_PATH")); // MEMTOOL_PATH is checked in the build.rs
 
@@ -84,13 +81,12 @@ impl MemtoolUpload {
     }
 }
 
-/// Write a Memtool configuration file to output
+/// Create a Memtool configuration
 ///
 /// The configuration file is templated based on the default configuration in Memtool
 /// from the TC37xA family, but the DAS port can be selected freely.
-fn write_cfg<W: Write>(target: &mut W, udas_port: usize) -> Result<(), std::io::Error> {
-    write!(
-        target,
+fn create_cfg(udas_port: usize) -> String {
+    format!(
         "[Main]
 Signature=UDE_TARGINFO_2.0
 MCUs=Controller0

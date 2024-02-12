@@ -200,8 +200,9 @@ impl TrapMetadata {
     /// If this function call fails, [TrapMetadata::empty] may be used to create
     /// a stub variant of this structure.
     fn from_elf(elf_file: &Path) -> anyhow::Result<Self> {
-        let elf_data = std::fs::read(elf_file).unwrap();
-        let elf = ElfBytes::<'_, AnyEndian>::minimal_parse(&elf_data).unwrap();
+        let elf_data = std::fs::read(elf_file).context("Cannot read elf file")?;
+        let elf =
+            ElfBytes::<'_, AnyEndian>::minimal_parse(&elf_data).context("Cannot parse elf file")?;
 
         let (symbols, strings) = elf
             .symbol_table()

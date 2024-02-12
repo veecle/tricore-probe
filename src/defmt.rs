@@ -26,8 +26,9 @@ impl DefmtDecoder {
     /// This function will fail if the user did not install the program, e.g. via
     /// `cargo install defmt-print`.
     pub fn spawn(elf_file: &Path) -> anyhow::Result<DefmtDecoder> {
-        let elf_data = fs::read(elf_file).unwrap();
-        let elf = ElfBytes::<'_, AnyEndian>::minimal_parse(&elf_data).unwrap();
+        let elf_data = fs::read(elf_file).context("Cannot read elf file")?;
+        let elf =
+            ElfBytes::<'_, AnyEndian>::minimal_parse(&elf_data).context("Cannot parse elf file")?;
 
         let (symbols, strings) = elf
             .symbol_table()
@@ -78,10 +79,18 @@ impl DefmtDecoder {
 
 impl Write for DefmtDecoder {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        self.spawned_decoder.stdin.as_mut().unwrap().write(buf)
+        self.spawned_decoder
+            .stdin
+            .as_mut()
+            .expect("Process must be set up with stdin")
+            .write(buf)
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        self.spawned_decoder.stdin.as_mut().unwrap().flush()
+        self.spawned_decoder
+            .stdin
+            .as_mut()
+            .expect("Process must be set up with stdin")
+            .flush()
     }
 }

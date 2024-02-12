@@ -2,7 +2,7 @@
 
 use std::{io::Write, time::Duration};
 
-use anyhow::{bail, Ok};
+use anyhow::{bail, Context, Ok};
 use defmt::{decode_rtt, HaltReason};
 use flash::MemtoolUpload;
 use rust_mcd::{
@@ -60,7 +60,7 @@ impl Chip for ChipInterface {
     fn new(_config: Self::Config) -> anyhow::Result<Self> {
         #[cfg(not(feature = "dasv8"))]
         {
-            std::thread::spawn(das::run_console);
+            std::thread::spawn(|| das::run_console().expect("Background process crashed"));
             // We need to wait a bit so that DAS is booted up correctly and sees
             // all connected chips
             std::thread::sleep(Duration::from_millis(800));
@@ -73,8 +73,13 @@ impl Chip for ChipInterface {
     }
 
     fn flash_hex(&mut self, ihex: String, halt_memtool: bool) -> anyhow::Result<()> {
-        let device = self.get_selected_device()?;
-        let mut upload = MemtoolUpload::start(ihex, halt_memtool, device.udas_port)?;
+        let device = self
+            .get_selected_device()
+            .context("Failed to identify target device for memtool")?;
+
+        let mut upload = MemtoolUpload::start(ihex, halt_memtool, device.udas_port)
+            .context("Failed to run memtool")?;
+
         upload.wait();
 
         Ok(())
@@ -123,18 +128,27 @@ impl ChipInterface {
     fn get_selected_device(&mut self) -> anyhow::Result<&DeviceSelection> {
         if self.device.is_none() {
             let connection = self.attempt_connection()?;
-            match connection.count() {
-                0 => bail!("No devices available"),
-                1 => {
-                    let device = DeviceSelection {
-                        udas_port: 0,
-                        info: connection.servers().next().unwrap(),
-                    };
-                    self.device = Some(device);
-                    log::info!("Choosing default device {device:?}");
+            let device = {
+                let mut servers = connection.servers();
+
+                let Some(first_server) = servers.next() else {
+                    bail!("No devices available")
+                };
+
+                let None = servers.next() else {
+                    bail!(
+                        "No device selected, multiple ({}) available",
+                        connection.count()
+                    );
+                };
+
+                DeviceSelection {
+                    udas_port: 0,
+                    info: first_server,
                 }
-                available => bail!("No device selected, multiple ({available}) available"),
-            }
+            };
+
+            self.device = Some(device);
         }
 
         Ok(self.device.as_ref().unwrap())

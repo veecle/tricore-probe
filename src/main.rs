@@ -95,7 +95,9 @@ fn main() -> anyhow::Result<()> {
     }
 
     if !args.no_flash {
-        command_server.flash_elf(args.elf.as_path(), args.halt_memtool)?;
+        command_server
+            .flash_elf(args.elf.as_path(), args.halt_memtool)
+            .context("Cannot flash elf file")?;
     } else {
         log::warn!("Flashing skipped - this might lead to malformed defmt data!")
     }
