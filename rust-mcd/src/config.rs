@@ -11,6 +11,8 @@ pub struct ServerConfig {
 impl ServerConfig {
     /// Returns the configuration as a string compatible to the MCD library.
     pub fn as_config_string(&self) -> std::ffi::CString {
+        // Check the documentation of `mcd_open_server_f` for field names that
+        // are to be used here.
         let mut composed_string = String::new();
 
         if let Some(value) = self.acc_hw.as_ref() {
