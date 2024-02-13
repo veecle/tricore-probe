@@ -80,7 +80,7 @@ pub fn decode_rtt<W: Write>(
 
         log::trace!("Found buffer at {:#X} with size {}", address, size);
 
-        BufferParameters { address, size }
+        BufferSetup { address, size }
     };
 
     // Remove the breakpoint, we do busy looping to acquire the rtt data
@@ -99,11 +99,11 @@ pub fn decode_rtt<W: Write>(
             &ring_buffer,
         )?;
 
-        /// Check if the core is still running, if it is not we assume a
-        /// breakpoint was hit
+        /// Checks if the core is still running, if it is not we assume a
+        /// breakpoint was hit.
         ///
         /// This function is a bit of a hack to work around lifetime issues
-        /// when borrowing the cores in multiple iterations of the loop
+        /// when borrowing the cores in multiple iterations of the loop.
         fn should_exit_for_core(
             core: &mut Core,
             accept_reset_event: bool,
@@ -120,8 +120,7 @@ pub fn decode_rtt<W: Write>(
             if core_state.state != CoreState::Running {
                 log::trace!("Device halted, attempting to acquire backtrace");
                 return Some(
-                    (&*core)
-                        .read_current()
+                    core.read_current()
                         .with_context(|| "Cannot read backtrace from device")
                         .map(HaltReason::DebugHit),
                 );
@@ -177,16 +176,15 @@ pub fn decode_rtt<W: Write>(
     }
 }
 
-/// Reason why decoding rtt data failed
+/// Represents the reason why decoding rtt data failed.
 #[derive(Debug)]
 pub enum HaltReason {
     DebugHit(Stacktrace),
 }
 
-/// Helper structure to facilitate reading at the correct offsets within
-/// the control block
+/// Models addresses within an rtt control block.
 ///
-/// The offsets were inferred as of https://github.com/knurling-rs/defmt/blob/59c14b924815a7185fd0079a74b936dba90c867c/firmware/defmt-rtt/src/lib.rs#L124
+/// The model is based on https://github.com/knurling-rs/defmt/blob/59c14b924815a7185fd0079a74b936dba90c867c/firmware/defmt-rtt/src/lib.rs#L124.
 struct RttControlBlock {
     base_address: u64,
 }
@@ -219,9 +217,11 @@ impl RttControlBlock {
     }
 }
 
-/// Address and size of the buffer that holds the actually rtt data
-struct BufferParameters {
+/// Models the buffer in use at runtime.
+struct BufferSetup {
+    /// Defines where the ring buffer starts.
     address: u32,
+    /// Defines the size of the ring buffer.
     size: u32,
 }
 
@@ -230,7 +230,7 @@ fn read_from_core<W: Write>(
     data_sink: &mut W,
     rtt_block: &RttControlBlock,
     local_read_index: &mut u32,
-    ring_buffer: &BufferParameters,
+    ring_buffer: &BufferSetup,
 ) -> anyhow::Result<()> {
     let device_write_index = core
         .read_bytes(rtt_block.device_write_index_addr(), 4)

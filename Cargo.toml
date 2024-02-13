@@ -27,6 +27,9 @@ docker = ["dep:tricore-docker"]
 
 default = ["windows"]
 
+# Enable for using DAS version 8 over version 7
+dasv8 = ["tricore-windows?/dasv8"]
+
 [workspace]
 members = [
     "rust-mcd",

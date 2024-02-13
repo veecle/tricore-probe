@@ -1,7 +1,8 @@
-use std::{fs, io::Write, path::Path};
+use std::{fmt::Debug, fs, io::Write, path::Path};
 
 use crate::elf::elf_to_hex;
 
+use anyhow::Context;
 pub use imp::Config;
 use tricore_common::{backtrace::Stacktrace, Chip};
 
@@ -23,27 +24,46 @@ pub struct ChipInterfaceImpl<C: Chip> {
     implementation: C,
 }
 
-impl<C: Chip> ChipInterfaceImpl<C> {
-    /// Initiate a new connection to a chip
+impl<C: Chip> ChipInterfaceImpl<C>
+where
+    C::Device: Debug,
+{
+    /// Initiates a new connection to a chip.
     pub fn new(interface_configuration: C::Config) -> anyhow::Result<Self> {
         Ok(ChipInterfaceImpl {
             implementation: C::new(interface_configuration)?,
         })
     }
 
-    /// Like [Chip::flash_hex], but the binary is specified as a path to an elf
+    /// Behaves like [Chip::list_devices].
+    pub fn list_devices(&mut self) -> anyhow::Result<Vec<C::Device>> {
+        self.implementation.list_devices()
+    }
+
+    /// Behaves like [Chip::connect].
+    pub fn connect(&mut self, device: Option<&C::Device>) -> anyhow::Result<()> {
+        if let Some(device) = device {
+            log::debug!("Connecting to device {device:?}");
+        } else {
+            log::debug!("Connecting to any available device");
+        }
+
+        self.implementation.connect(device)
+    }
+
+    /// Behaves like [Chip::flash_hex], but the binary is specified as a path to an elf
     /// file instead of provided as Intel hex in memory.
-    pub fn flash_elf(&self, elf_file: &Path, halt_memtool: bool) -> anyhow::Result<()> {
+    pub fn flash_elf(&mut self, elf_file: &Path, halt_memtool: bool) -> anyhow::Result<()> {
         log::info!("Converting elf {} to hex file", elf_file.display());
-        let elf_data = fs::read(elf_file).unwrap();
-        let ihex = elf_to_hex(&elf_data)?;
+        let elf_data = fs::read(elf_file).context("Cannot load elf file")?;
+        let ihex = elf_to_hex(&elf_data).context("Cannot convert elf to hex file")?;
         log::info!("Flashing hex file");
         self.implementation.flash_hex(ihex, halt_memtool)
     }
 
-    /// Like [Chip::read_rtt]
+    /// Behaves like [Chip::read_rtt].
     pub fn read_rtt<W: Write>(
-        &self,
+        &mut self,
         rtt_control_block_address: u64,
         decoder: W,
     ) -> anyhow::Result<Stacktrace> {

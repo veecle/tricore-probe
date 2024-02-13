@@ -3,11 +3,10 @@ use tricore_common::backtrace::{csa::SavedContext, pcxi::PCXI};
 
 use crate::backtrace::csa::ContextLinkWordExt;
 
-/// Extension trait to iterate over the CSA link chain
-///
-/// Most notably implemented for [PCXI]
+/// Extension trait for [PCXI].
 pub trait PCXIExt {
-    /// Allows to iterate over all contexts using the specified core access
+    /// Allows to iterate over all contexts in the CSA link chain using the
+    /// specified core access.
     fn walk_context<'a>(&self, core: &'a Core) -> ContextWalker<'a>;
 }
 
@@ -17,7 +16,7 @@ impl PCXIExt for PCXI {
     }
 }
 
-/// Iterator over all contexts in the link chain
+/// Iterator over all contexts in the link chain.
 pub struct ContextWalker<'a> {
     pcxi: PCXI,
     core: &'a Core<'a>,

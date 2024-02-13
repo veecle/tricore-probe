@@ -1,11 +1,15 @@
 #![feature(type_alias_impl_trait)]
 
-use std::io::Write;
+use std::{io::Write, time::Duration};
 
-use das::run_console;
+use anyhow::{bail, Context, Ok};
 use defmt::{decode_rtt, HaltReason};
 use flash::MemtoolUpload;
-use rust_mcd::{reset::ResetClass, system::System};
+use rust_mcd::{
+    connection::{Scan, ServerInfo},
+    reset::ResetClass,
+    system::System,
+};
 use tricore_common::{backtrace::Stacktrace, Chip};
 
 mod backtrace;
@@ -16,31 +20,77 @@ pub mod flash;
 #[derive(clap::Args, Debug)]
 pub struct Config;
 
-#[derive(Default)]
-pub struct ChipInterface {}
+#[derive(Debug, Clone, Copy)]
+pub struct DeviceSelection {
+    pub udas_port: usize,
+    pub info: ServerInfo,
+}
+
+impl tricore_common::Device for DeviceSelection {
+    fn hardware_description(&self) -> &str {
+        self.info.acc_hw()
+    }
+}
+
+pub struct ChipInterface {
+    device: Option<DeviceSelection>,
+    scan_result: Option<Scan>,
+}
 
 impl Chip for ChipInterface {
     type Config = Config;
 
-    fn new(_config: Self::Config) -> anyhow::Result<Self> {
-        std::thread::spawn(run_console);
-        Ok(ChipInterface {})
+    type Device = DeviceSelection;
+
+    fn list_devices(&mut self) -> anyhow::Result<Vec<Self::Device>> {
+        let connection = self.attempt_connection()?;
+        Ok(connection
+            .servers()
+            .enumerate()
+            .map(|(udas_port, info)| DeviceSelection { udas_port, info })
+            .collect())
     }
 
-    fn flash_hex(&self, ihex: String, halt_memtool: bool) -> anyhow::Result<()> {
-        let mut upload = MemtoolUpload::start(ihex, halt_memtool)?;
+    fn connect(&mut self, device: Option<&Self::Device>) -> anyhow::Result<()> {
+        self.device = device.copied();
+
+        Ok(())
+    }
+
+    fn new(_config: Self::Config) -> anyhow::Result<Self> {
+        #[cfg(not(feature = "dasv8"))]
+        {
+            std::thread::spawn(|| das::run_console().expect("Background process crashed"));
+            // We need to wait a bit so that DAS is booted up correctly and sees
+            // all connected chips
+            std::thread::sleep(Duration::from_millis(800));
+        }
+        rust_mcd::library::init();
+        Ok(ChipInterface {
+            device: None,
+            scan_result: None,
+        })
+    }
+
+    fn flash_hex(&mut self, ihex: String, halt_memtool: bool) -> anyhow::Result<()> {
+        let device = self
+            .get_selected_device()
+            .context("Failed to identify target device for memtool")?;
+
+        let mut upload = MemtoolUpload::start(ihex, halt_memtool, device.udas_port)
+            .context("Failed to run memtool")?;
+
         upload.wait();
 
         Ok(())
     }
 
     fn read_rtt<W: Write>(
-        &self,
+        &mut self,
         rtt_control_block_address: u64,
         decoder: W,
     ) -> anyhow::Result<Stacktrace> {
-        rust_mcd::library::init();
-        let system = System::connect()?;
+        let system = self.get_system()?;
         let core_count = system.core_count();
         let mut core = system.get_core(0)?;
         let secondary_cores: Result<Vec<_>, _> = (1..(core_count))
@@ -58,15 +108,62 @@ impl Chip for ChipInterface {
 }
 
 impl ChipInterface {
-    pub fn reset(&self) -> anyhow::Result<()> {
+    pub fn reset(&mut self) -> anyhow::Result<()> {
         rust_mcd::library::init();
-        let system = System::connect()?;
+        let system = self.get_system()?;
+
         let core = system.get_core(0)?;
+
         let system_reset = ResetClass::construct_reset_class(&core, 0);
         // Do we also need to reset the other cores?
         core.reset(system_reset, true)?;
         core.run()?;
         drop(system);
         Ok(())
+    }
+
+    /// Returns the selected device.
+    ///
+    /// This function will not fail if no selection has been made, but exactly one
+    /// device is available.
+    fn get_selected_device(&mut self) -> anyhow::Result<&DeviceSelection> {
+        if self.device.is_none() {
+            let connection = self.attempt_connection()?;
+            let device = {
+                let mut servers = connection.servers();
+
+                let Some(first_server) = servers.next() else {
+                    bail!("No devices available")
+                };
+
+                let None = servers.next() else {
+                    bail!(
+                        "No device selected, multiple ({}) available",
+                        connection.count()
+                    );
+                };
+
+                DeviceSelection {
+                    udas_port: 0,
+                    info: first_server,
+                }
+            };
+
+            self.device = Some(device);
+        }
+
+        Ok(self.device.as_ref().unwrap())
+    }
+
+    fn attempt_connection(&mut self) -> anyhow::Result<&Scan> {
+        if self.scan_result.is_none() {
+            self.scan_result = Some(Scan::new()?);
+        }
+
+        Ok(self.scan_result.as_ref().unwrap())
+    }
+
+    fn get_system(&mut self) -> anyhow::Result<System> {
+        self.get_selected_device()?.info.connect()
     }
 }

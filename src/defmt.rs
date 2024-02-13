@@ -1,4 +1,4 @@
-//! Handles decoding of defmt byte streams, see [DefmtDecoder]
+//! Handles decoding of defmt byte streams, see [DefmtDecoder].
 use std::{
     fs,
     io::Write,
@@ -10,7 +10,7 @@ use anyhow::Context;
 
 use elf::{endian::AnyEndian, ElfBytes};
 
-/// A structure that is able to decode a byte stream as defmt data
+/// This structure handles decoding a byte stream as defmt data.
 ///
 /// This is implemented by spawning `defmt-print` and piping the output to the
 /// parents stdout. Note that this object implements [Write], so input data is
@@ -21,13 +21,16 @@ pub struct DefmtDecoder {
 }
 
 impl DefmtDecoder {
-    /// Spawn a new process with the `defmt-print` utility
+    /// Starts a new decoding process.
+    ///
+    /// Output will be written to the current standard output.
     ///
     /// This function will fail if the user did not install the program, e.g. via
     /// `cargo install defmt-print`.
     pub fn spawn(elf_file: &Path) -> anyhow::Result<DefmtDecoder> {
-        let elf_data = fs::read(elf_file).unwrap();
-        let elf = ElfBytes::<'_, AnyEndian>::minimal_parse(&elf_data).unwrap();
+        let elf_data = fs::read(elf_file).context("Cannot read elf file")?;
+        let elf =
+            ElfBytes::<'_, AnyEndian>::minimal_parse(&elf_data).context("Cannot parse elf file")?;
 
         let (symbols, strings) = elf
             .symbol_table()
@@ -68,9 +71,9 @@ impl DefmtDecoder {
         })
     }
 
-    /// Obtain the address of the RTT control block of the underlying binary
+    /// Returns the address of the RTT control block used by the underlying binary.
     ///
-    /// TODO this method does not really belong to this class
+    /// TODO this method does not really belong to this class.
     pub fn rtt_control_block_address(&self) -> u64 {
         self.rtt_symbol_address
     }
@@ -78,10 +81,18 @@ impl DefmtDecoder {
 
 impl Write for DefmtDecoder {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        self.spawned_decoder.stdin.as_mut().unwrap().write(buf)
+        self.spawned_decoder
+            .stdin
+            .as_mut()
+            .expect("Process must be set up with stdin")
+            .write(buf)
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        self.spawned_decoder.stdin.as_mut().unwrap().flush()
+        self.spawned_decoder
+            .stdin
+            .as_mut()
+            .expect("Process must be set up with stdin")
+            .flush()
     }
 }

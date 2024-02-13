@@ -44,16 +44,15 @@ impl<'a> Debug for ResetClass<'a> {
 }
 
 impl<'a> ResetClass<'a> {
-    /// MCD internal representation of this reset class
+    /// Returns the MCD internal representation of this reset class.
     pub(crate) fn as_vector(&self) -> u32 {
         1u32 << self.bit_set
     }
 
-    /// Construct a reset class from a known reset class
+    /// Creates a reset class from a known reset class.
     ///
     /// The user should make sure that the class also exists for the specified core,
-    /// otherwise this might create errors later in the execution which are not
-    /// easy to track down
+    /// otherwise this might create errors later in the execution.
     pub fn construct_reset_class(core: &'a Core<'a>, class: u8) -> ResetClass<'a> {
         ResetClass {
             bit_set: class,
@@ -63,8 +62,9 @@ impl<'a> ResetClass<'a> {
 
     pub fn get_info(&self) -> anyhow::Result<ResetInfo> {
         let mut output = mcd_rst_info_st::default();
-        let result =
-            unsafe { MCD_LIB.mcd_qry_rst_class_info_f(self.core.core, self.bit_set, &mut output) };
+        let result = unsafe {
+            MCD_LIB.mcd_qry_rst_class_info_f(self.core.core.as_ptr(), self.bit_set, &mut output)
+        };
 
         if result != 0 {
             Err(expect_error(Some(self.core))).with_context(|| "Library reported an error")

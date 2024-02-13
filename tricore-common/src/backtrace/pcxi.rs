@@ -2,7 +2,7 @@ use bitfield_struct::bitfield;
 
 use super::csa::ContextLinkWord;
 
-/// The PCXI register of the tricore architecture
+/// Models the PCXI register of the tricore architecture.
 #[bitfield(u32)]
 #[derive(Default)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -18,8 +18,8 @@ pub struct PCXI {
 }
 
 impl PCXI {
-    /// This function extract required bits from the register to form the current
-    /// context link word, also known as 'previous context link word'
+    /// This function extracts required bits from the register to form the current
+    /// context link word, also known as 'previous context link word'.
     pub fn get_context(&self) -> Option<ContextLinkWord> {
         if self.previous_context_pointer() == 0 && self.previous_segment_address() == 0 {
             return None;

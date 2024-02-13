@@ -1,17 +1,22 @@
 use std::{ffi::CStr, fmt::Display};
 
-use crate::mcd_bindings::{mcd_core_st, mcd_error_info_st, MCD_ERR_NONE};
+use anyhow::Context;
+
+use crate::{
+    mcd_bindings::{mcd_core_st, mcd_error_info_st, MCD_ERR_NONE},
+    raw::McdReturnError,
+};
 
 use super::{core::Core, MCD_LIB};
 
-/// Obtain a more specific error description of the latest error
+/// Obtains a more specific error description of the latest error.
 ///
 /// A core may be specified to get the last error that happened for the operation
 /// on this core.
 pub fn get_error(core: Option<&'_ Core<'_>>) -> Option<Error> {
     let mut output = mcd_error_info_st::default();
     let core_reference = core
-        .map(|core| core.core as *const mcd_core_st)
+        .map(|core| core.core.as_ptr() as *const mcd_core_st)
         .unwrap_or(std::ptr::null());
     unsafe { MCD_LIB.mcd_qry_error_info_f(core_reference, &mut output) };
     if output.return_status != MCD_ERR_NONE as u32 {
@@ -21,7 +26,20 @@ pub fn get_error(core: Option<&'_ Core<'_>>) -> Option<Error> {
     }
 }
 
-/// Like [get_error], but it will panic if the library does not report an error
+/// This is an extension trait for [Result<R, McdReturnError>].
+pub trait McdError<R> {
+    /// Adds error information, parsed from the MCD library.
+    fn add_mcd_error_info<'a>(self, core: Option<&'a Core<'a>>) -> anyhow::Result<R>;
+}
+
+impl<R> McdError<R> for Result<R, McdReturnError> {
+    fn add_mcd_error_info<'a>(self, core: Option<&'a Core<'a>>) -> anyhow::Result<R> {
+        self.with_context(|| expect_error(core))
+    }
+}
+
+/// Behaves like [get_error], but it will panic if the library does not report
+/// an error.
 pub fn expect_error(core: Option<&'_ Core<'_>>) -> Error {
     get_error(core).expect("expected error, but library reported none")
 }
@@ -67,14 +85,14 @@ impl From<mcd_error_info_st> for Error {
     }
 }
 
-/// See the original header files for [crate::mcd_bindings::mcd_error_event_et]
+/// Rusty enumeration representing [crate::mcd_bindings::mcd_error_event_et].
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum EventError {
-    /// See [crate::mcd_bindings::MCD_ERR_EVT_RESET]
+    /// Corresponds to [crate::mcd_bindings::MCD_ERR_EVT_RESET].
     Reset,
-    /// See [crate::mcd_bindings::MCD_ERR_EVT_PWRDN]
+    /// Corresponds to [crate::mcd_bindings::MCD_ERR_EVT_PWRDN].
     PowerDown,
-    /// See [crate::mcd_bindings::MCD_ERR_EVT_HWFAILURE]
+    /// Corresponds to [crate::mcd_bindings::MCD_ERR_EVT_HWFAILURE].
     HardwareFailure,
 }
 
@@ -89,7 +107,9 @@ impl EventError {
     }
 }
 
-/// See the original header files for [crate::mcd_bindings::mcd_error_code_et]
+/// Rusty enumeration representing [crate::mcd_bindings::mcd_error_code_et].
+///
+/// The documentation was copied from sources.
 #[derive(Debug)]
 pub enum McdErrorCode {
     /// No error.
@@ -148,7 +168,7 @@ pub enum McdErrorCode {
     McdErrTrigCreate,
     /// Error during trigger information access.
     McdErrTrigAccess,
-    /// Library reported unknown error code
+    /// Library reported unknown error code.
     Unknown(u32),
 }
 impl McdErrorCode {

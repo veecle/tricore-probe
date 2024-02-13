@@ -1,6 +1,7 @@
 use std::{
     cell::Cell,
     ffi::{c_void, CStr},
+    ptr::NonNull,
 };
 
 use anyhow::Context;
@@ -24,13 +25,13 @@ use crate::{
 
 #[derive(Debug)]
 pub struct Core<'a> {
-    pub core: &'a mcd_core_st,
+    pub core: NonNull<mcd_core_st>,
     _core_connection: &'a mcd_core_con_info_st,
     payload_size: Cell<Option<u32>>,
 }
 
 impl<'a> Core<'a> {
-    pub fn new(core: &'a mcd_core_st, core_connection: &'a mcd_core_con_info_st) -> Self {
+    pub fn new(core: NonNull<mcd_core_st>, core_connection: &'a mcd_core_con_info_st) -> Self {
         Core {
             core,
             _core_connection: core_connection,
@@ -41,7 +42,7 @@ impl<'a> Core<'a> {
     pub fn reset(&self, reset_type: ResetClass, halt_after_reset: bool) -> anyhow::Result<()> {
         let reset_vector = reset_type.as_vector();
         let rst_and_halt = if halt_after_reset { 1 } else { 0 };
-        let result = unsafe { MCD_LIB.mcd_rst_f(self.core, reset_vector, rst_and_halt) };
+        let result = unsafe { MCD_LIB.mcd_rst_f(self.core.as_ptr(), reset_vector, rst_and_halt) };
         if result != 0 {
             Err(expect_error(Some(self))).with_context(|| "Library reported an error")
         } else {
@@ -51,7 +52,8 @@ impl<'a> Core<'a> {
 
     pub fn get_reset_classes(&self) -> anyhow::Result<impl Iterator<Item = ResetClass>> {
         let mut reset_classes = 0;
-        let result = unsafe { MCD_LIB.mcd_qry_rst_classes_f(self.core, &mut reset_classes) };
+        let result =
+            unsafe { MCD_LIB.mcd_qry_rst_classes_f(self.core.as_ptr(), &mut reset_classes) };
         if result != 0 {
             return Err(expect_error(Some(self)))
                 .with_context(|| "Could not obtain a list of available reset classes");
@@ -61,12 +63,13 @@ impl<'a> Core<'a> {
             .filter(move |bit| (reset_classes & (1 << *bit)) != 0)
             .map(|bit_set| ResetClass::construct_reset_class(self, bit_set)))
     }
-    /// Query the state of the core
+
+    /// Queries the state of the core.
     #[allow(clippy::result_large_err)]
     // The large result is due to the unboxed error string for the bindgen type.
     pub fn query_state(&self) -> Result<CoreInfo, crate::error::Error> {
         let mut output = mcd_core_state_st::default();
-        let result = unsafe { MCD_LIB.mcd_qry_state_f(self.core, &mut output) };
+        let result = unsafe { MCD_LIB.mcd_qry_state_f(self.core.as_ptr(), &mut output) };
 
         if result != 0 {
             return Err(expect_error(Some(self)));
@@ -75,7 +78,7 @@ impl<'a> Core<'a> {
         Ok(output.into())
     }
 
-    /// Like [Self::query_state], but will never exit gracefully
+    /// Behaves like [Self::query_state], but it will never exit gracefully.
     pub fn query_state_gracefully(
         &self,
         mut should_query_again: impl FnMut(&crate::error::Error) -> bool,
@@ -99,7 +102,8 @@ impl<'a> Core<'a> {
         }
 
         let mut max_payload = 0;
-        let result = unsafe { MCD_LIB.mcd_qry_max_payload_size_f(self.core, &mut max_payload) };
+        let result =
+            unsafe { MCD_LIB.mcd_qry_max_payload_size_f(self.core.as_ptr(), &mut max_payload) };
         assert_eq!(result, 0);
         self.payload_size.replace(Some(max_payload));
         log::trace!("Maximum payload is {}", max_payload);
@@ -123,7 +127,8 @@ impl<'a> Core<'a> {
                 num_tx: 1,
                 num_tx_ok: 0,
             };
-            let result = unsafe { MCD_LIB.mcd_execute_txlist_f(self.core, &mut transaction_list) };
+            let result =
+                unsafe { MCD_LIB.mcd_execute_txlist_f(self.core.as_ptr(), &mut transaction_list) };
             if result != 0 {
                 return Err(expect_error(Some(self)))
                     .with_context(|| "Internal MCD library eror while trying to read data");
@@ -153,7 +158,8 @@ impl<'a> Core<'a> {
                 num_tx_ok: 0,
             };
 
-            let result = unsafe { MCD_LIB.mcd_execute_txlist_f(self.core, &mut transaction_list) };
+            let result =
+                unsafe { MCD_LIB.mcd_execute_txlist_f(self.core.as_ptr(), &mut transaction_list) };
 
             if result != 0 {
                 return Err(expect_error(Some(self)))
@@ -174,7 +180,7 @@ impl<'a> Core<'a> {
     }
 
     pub fn run(&self) -> anyhow::Result<()> {
-        let result = unsafe { MCD_LIB.mcd_run_f(self.core, 0) };
+        let result = unsafe { MCD_LIB.mcd_run_f(self.core.as_ptr(), 0) };
         if result != 0 {
             Err(expect_error(Some(self))).with_context(|| "Internal library reported an error")
         } else {
@@ -185,7 +191,7 @@ impl<'a> Core<'a> {
     pub fn step(&self) -> anyhow::Result<()> {
         let step_type = MCD_CORE_STEP_TYPE_INSTR as u32;
 
-        let result = unsafe { MCD_LIB.mcd_step_f(self.core, 0, step_type, 1) };
+        let result = unsafe { MCD_LIB.mcd_step_f(self.core.as_ptr(), 0, step_type, 1) };
 
         if result != 0 {
             Err(expect_error(Some(self))).with_context(|| "Internal library reported an error")
@@ -205,7 +211,7 @@ impl<'a> Core<'a> {
 
         let result = unsafe {
             MCD_LIB.mcd_create_trig_f(
-                self.core,
+                self.core.as_ptr(),
                 &mut trigger as *mut mcd_trig_simple_core_st as *mut c_void,
                 &mut trigger_id,
             )
@@ -226,7 +232,7 @@ impl<'a> Core<'a> {
     pub fn download_triggers(&self) {
         let _state = self.sample_triggers();
 
-        let result = unsafe { MCD_LIB.mcd_activate_trig_set_f(self.core) };
+        let result = unsafe { MCD_LIB.mcd_activate_trig_set_f(self.core.as_ptr()) };
 
         assert_eq!(result, 0);
     }
@@ -234,7 +240,7 @@ impl<'a> Core<'a> {
     pub fn sample_triggers(&self) -> TriggerSetState {
         let mut state = mcd_trig_set_state_st::default();
 
-        let result = unsafe { MCD_LIB.mcd_qry_trig_set_state_f(self.core, &mut state) };
+        let result = unsafe { MCD_LIB.mcd_qry_trig_set_state_f(self.core.as_ptr(), &mut state) };
         assert_eq!(result, 0);
 
         state.into()
@@ -294,7 +300,11 @@ impl<'a> Trigger<'a> {
     pub fn get_state(&self) -> anyhow::Result<TriggerState> {
         let mut state_output = mcd_trig_state_st::default();
         let result = unsafe {
-            MCD_LIB.mcd_qry_trig_state_f(self.core.core, self.trigger_id, &mut state_output)
+            MCD_LIB.mcd_qry_trig_state_f(
+                self.core.core.as_ptr(),
+                self.trigger_id,
+                &mut state_output,
+            )
         };
         if result != 0 {
             return Err(expect_error(Some(self.core)))
@@ -306,7 +316,7 @@ impl<'a> Trigger<'a> {
     }
 
     pub fn remove(self) -> anyhow::Result<()> {
-        let result = unsafe { MCD_LIB.mcd_remove_trig_f(self.core.core, self.trigger_id) };
+        let result = unsafe { MCD_LIB.mcd_remove_trig_f(self.core.core.as_ptr(), self.trigger_id) };
         if result != 0 {
             return Err(expect_error(Some(self.core))).with_context(|| "Cannot remove trigger");
         }

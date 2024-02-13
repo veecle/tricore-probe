@@ -1,8 +1,7 @@
-//! Abstracts over memory spaces and blocks within
+//! Abstracts over memory spaces and blocks within.
 //!
 //! TODO The implementations in this module are poorly documented (due to my
 //! poor understanding of the concept) and mostly untested.
-//!
 #![allow(dead_code)]
 use std::{ffi::CStr, fmt::Debug, ptr};
 
@@ -24,7 +23,7 @@ impl<'a> MemorySpace<'a> {
     pub fn get_all(core: &'a Core) -> Vec<MemorySpace<'a>> {
         let mut query_spaces = 0;
         let result = unsafe {
-            MCD_LIB.mcd_qry_mem_spaces_f(core.core, 0, &mut query_spaces, ptr::null_mut())
+            MCD_LIB.mcd_qry_mem_spaces_f(core.core.as_ptr(), 0, &mut query_spaces, ptr::null_mut())
         };
         assert_eq!(result, 0);
 
@@ -36,7 +35,7 @@ impl<'a> MemorySpace<'a> {
 
         let result = unsafe {
             MCD_LIB.mcd_qry_mem_spaces_f(
-                core.core,
+                core.core.as_ptr(),
                 0,
                 &mut query_spaces,
                 reserved_spaces.as_mut_ptr(),
@@ -57,7 +56,7 @@ impl<'a> MemorySpace<'a> {
 
         let result = unsafe {
             MCD_LIB.mcd_qry_mem_blocks_f(
-                self.core.core,
+                self.core.core.as_ptr(),
                 self.inner.mem_space_id,
                 0,
                 &mut result_block_count,
@@ -79,7 +78,7 @@ impl<'a> MemorySpace<'a> {
 
         let result = unsafe {
             MCD_LIB.mcd_qry_mem_blocks_f(
-                self.core.core,
+                self.core.core.as_ptr(),
                 self.inner.mem_space_id,
                 0,
                 &mut result_block_count,
@@ -100,7 +99,8 @@ impl<'a> MemorySpace<'a> {
             .collect())
     }
 
-    /// The name of this space as reported from the debug controller
+    /// Returns the name of this space as reported from the debug
+    /// controller.
     pub fn get_name(&self) -> &str {
         unsafe { CStr::from_ptr(&self.inner.mem_space_name[0] as *const i8) }
             .to_str()
@@ -134,7 +134,7 @@ impl<'a> MemoryBlock<'a> {
         }
     }
 
-    /// The name of this block as reported from the debug controller
+    /// Returns the name of this block as reported from the debug controller.
     pub fn name(&self) -> &str {
         unsafe { CStr::from_ptr(&self.inner.mem_block_name[0] as *const i8) }
             .to_str()

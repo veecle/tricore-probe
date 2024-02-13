@@ -1,4 +1,4 @@
-use std::{env, fs::File, io::Write, path::PathBuf};
+use std::{env, path::PathBuf};
 
 fn main() {
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
@@ -9,8 +9,7 @@ fn main() {
         // Note that this library will currently not run on linux since it requires
         // mcdxdas.dll to be installed
         let pregenerated = include_bytes!("pregenerated.rs");
-        let mut bindings = File::create(bindings_file).unwrap();
-        bindings.write_all(pregenerated).unwrap();
+        std::fs::write(bindings_file, pregenerated).unwrap();
     } else {
         // If we build on linux, we need to specify import where
         // to find the header files. We assume the xwin project is in use to provide

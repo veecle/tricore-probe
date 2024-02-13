@@ -1,6 +1,7 @@
-//! Abstracts over breakpoints for a [crate::core::Core]
+//! Abstracts over breakpoints for a [crate::core::Core].
 //!
-//! TODO The implementation is very rudimentary and possibly wrong
+//! TODO The implementation is very rudimentary and possibly wrong, since the logic
+//! was prototyped by trial and error at the time of writing.
 use crate::mcd_bindings::{
     mcd_addr_st, mcd_trig_simple_core_st, MCD_TRIG_ACTION_DBG_DEBUG, MCD_TRIG_OPT_DEFAULT,
     MCD_TRIG_TYPE_IP, MCD_TRIG_TYPE_RW,
