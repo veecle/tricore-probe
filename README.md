@@ -20,6 +20,7 @@ during installation.
 3. [`defmt-print` CLI utility](https://crates.io/crates/defmt-print)
 4. `objcopy` CLI utility
 5. `addr2line` CLI utility
+6. Rust nightly toolchain
 
 You can obtain the last two applications e.g. as part of the [MinGW-w64](https://www.mingw-w64.org/) 
 project.
