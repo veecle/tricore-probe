@@ -9,10 +9,12 @@ This program can be configured as a [runner](https://doc.rust-lang.org/cargo/ref
 Check [`main.rs`](src/main.rs) for additional configuration options.
 
 # Requirements
+
 This program has various dependencies that must be installed for this program to 
 work properly:
 1. [Infineon DAS tool](https://www.infineon.com/cms/en/product/promopages/das/#!?fileId=db3a30431ed1d7b2011f469ac40e56af)
 2. [Infineon Memtool 2021.08](https://www.infineon.com/cms/en/tools/aurix-tools/free-tools/infineon/): 
+
 When installing this program make sure the environment variable `MEMTOOL_PATH` is set
 to the root of the memtool installation. If the environment variable is not set 
 a default path is assumed that should work if the install path was not changed 
@@ -26,6 +28,7 @@ You can obtain the last two applications e.g. as part of the [MinGW-w64](https:/
 project.
 
 # Known flaws
+
 This application is still in development and has some known drawbacks. If you 
 find something that is not listed here, feel free to open an issue or leave us a
 message.
@@ -36,3 +39,10 @@ configured as the default settings in the `Memtool` application.
 require a working linux version. We thus created a dockerized setup that allows 
 us to use these tools in linux with little overhead. Check [tricore-docker/README.md](tricore-docker/README.md)
 for more information.
+
+
+## License
+
+Licensed under either of Apache License, Version 2.0 or MIT license at your option.
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.

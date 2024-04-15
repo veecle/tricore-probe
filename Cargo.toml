@@ -1,9 +1,12 @@
 [package]
 name = "tricore-probe"
 version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Tricore-probe: Run Rust effortlessly on Infineon AURIX™ TriCore™ chips."
 
 [dependencies]
 anyhow = "1.0.69"
@@ -43,3 +46,10 @@ members = [
     "tricore-docker/ftd-api",
     "tricore-docker/dll-export",
 ]
+
+[workspace.package]
+authors = ["Veecle GmbH - info@veecle.io"]
+edition = "2021"
+license = "Apache-2.0 OR MIT"
+homepage = "https://veecle.io"
+repository = "https://github.com/veecle/tricore-probe"
