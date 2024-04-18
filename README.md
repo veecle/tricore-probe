@@ -19,13 +19,11 @@ When installing this program make sure the environment variable `MEMTOOL_PATH` i
 to the root of the memtool installation. If the environment variable is not set 
 a default path is assumed that should work if the install path was not changed 
 during installation.
-3. [`defmt-print` CLI utility](https://crates.io/crates/defmt-print)
-4. `objcopy` CLI utility
-5. `addr2line` CLI utility
-6. Rust nightly toolchain
 
-You can obtain the last two applications e.g. as part of the [MinGW-w64](https://www.mingw-w64.org/) 
-project.
+3. [`defmt-print` CLI utility](https://crates.io/crates/defmt-print)
+4. `objcopy` CLI utility (obtain e.g. as part of the [MinGW-w64](https://www.mingw-w64.org/) project)
+5. `addr2line` CLI utility (obtain e.g. as part of the [MinGW-w64](https://www.mingw-w64.org/) project)
+6. Rust nightly toolchain
 
 # Known flaws
 
