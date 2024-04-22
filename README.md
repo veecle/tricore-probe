@@ -16,7 +16,7 @@ work properly:
 2. [Infineon Memtool 2021.08](https://www.infineon.com/cms/en/tools/aurix-tools/free-tools/infineon/): 
 
 When installing this program make sure the environment variable `MEMTOOL_PATH` is set
-to the root of the memtool installation. If the environment variable is not set 
+to the memtool executable (`<your-path>\Infineon\Memtool 2021\IMTMemtool.exe`). If the environment variable is not set 
 a default path is assumed that should work if the install path was not changed 
 during installation.
 
