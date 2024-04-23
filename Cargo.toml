@@ -42,8 +42,6 @@ members = [
     "tricore-docker/win-daemon",
     "tricore-docker/win-ftd2xx-dll",
     "tricore-docker/rpc-api",
-    "tricore-docker/native",
-    "tricore-docker/ftd-api",
     "tricore-docker/dll-export",
 ]
 

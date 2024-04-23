@@ -11,13 +11,13 @@ repository.workspace = true
 crate-type=["cdylib"]
 
 [dependencies]
-ftd-api = { path = "../ftd-api" }
 rpc-api = { path = "../rpc-api" }
 ciborium = "0.2.0"
 serde = "1.0.152"
 anyhow = "1.0.69"
 dll-export = { path = "../dll-export" }
 log = { version = "0.4.0", features = ["std"] }
+libftd2xx-ffi = "0.8.6"
 
 [features]
 default = ["export"]
