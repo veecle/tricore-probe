@@ -1,6 +1,7 @@
 //! RPC protocol definition for communication with FTDI server.
-//! 
+//!
 //! This module requires heavy refactoring.
+use anyhow::bail;
 use libftd2xx::FtStatus;
 use serde::{Deserialize, Serialize};
 
@@ -43,11 +44,11 @@ macro_rules! rpc_definition {
                     $(pub $out_var: $out_ty,)*
                 }
 
-                impl TryInto<$name> for ResponseBody {
+                impl TryFrom<ResponseBody> for $name {
                     type Error = anyhow::Error;
-                    fn try_into(self) -> Result<$name, Self::Error> {
-                        let Self::$name(value) = self else {
-                            return Err(anyhow::Error::msg(format!("Expected type {:?}, got {:?}", stringify!($name), self)))
+                    fn try_from(body: ResponseBody) -> Result<$name, Self::Error> {
+                        let ResponseBody::$name(value) = body else {
+                            return Err(anyhow::Error::msg(format!("Expected type {:?}, got {:?}", stringify!($name), body)))
                         };
                         Ok(value)
                     }
@@ -163,6 +164,22 @@ pub struct RPCResponse {
     pub status: Result<(), CommandError>,
 }
 
+impl RPCResponse {
+    /// Implementation detail that transform the response to
+    /// a FFI compatible result.
+    pub fn map_result<T>(self, f: impl FnOnce(T)) -> anyhow::Result<u32>
+    where
+        T: TryFrom<response::ResponseBody, Error = anyhow::Error>,
+    {
+        if let Err(e) = self.status {
+            bail!(e.0 as u32);
+        }
+
+        // If we are Ok(_) process the callback and return error code 0
+        f(T::try_from(self.body)?);
+        Ok(0)
+    }
+}
 
 /// Error types returned by the FTDI server.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
