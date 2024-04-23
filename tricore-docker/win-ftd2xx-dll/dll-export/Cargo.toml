@@ -13,4 +13,5 @@ proc-macro = true
 [dependencies]
 syn = "1.0.107"
 proc-macro2 = "1.0.50"
-macro-impl = { path = "./macro-impl" }
+quote = "1.0.0"
+

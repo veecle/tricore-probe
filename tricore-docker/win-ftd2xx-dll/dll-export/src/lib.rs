@@ -1,6 +1,7 @@
 #![feature(proc_macro_span)]
 #![feature(proc_macro_def_site)]
 
+mod macro_impl;
 use macro_impl::{ExportConfiguration, Input};
 use proc_macro::{Span, TokenStream};
 use syn::parse_macro_input;
