@@ -5,6 +5,8 @@ use anyhow::bail;
 use libftd2xx::FtStatus;
 use serde::{Deserialize, Serialize};
 
+use self::response::ResponseBody;
+
 macro_rules! rpc_definition {
     ($($name:ident { $(pub $var_name:ident : $var_ty:ty ),*} => { $(pub $out_var:ident : $out_ty:ty),*}),*) => {
         pub mod request {
@@ -39,9 +41,15 @@ macro_rules! rpc_definition {
             }
 
             $(
-                #[derive(Serialize, Deserialize, Debug)]
+                #[derive(Serialize, Deserialize, Debug, Default)]
                 pub struct $name {
                     $(pub $out_var: $out_ty,)*
+                }
+
+                impl From<$name> for ResponseBody {
+                    fn from(value: $name) -> Self {
+                        ResponseBody::$name(value)
+                    }
                 }
 
                 impl TryFrom<ResponseBody> for $name {
@@ -178,6 +186,14 @@ impl RPCResponse {
         // If we are Ok(_) process the callback and return error code 0
         f(T::try_from(self.body)?);
         Ok(0)
+    }
+
+    /// Create a new response from a status and a body.
+    pub fn from_result(status: Result<(), FtStatus>, body: impl Into<ResponseBody>) -> Self {
+        RPCResponse {
+            body: body.into(),
+            status: status.map_err(CommandError),
+        }
     }
 }
 

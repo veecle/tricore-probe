@@ -1,11 +1,16 @@
-use std::ffi::{c_void, CStr};
+//! FTDI driver implementation based on RPC commands.
+//!
+//! This is linked to the patched DLL exported by `win-ftd2xx-dll`.
 use std::fs::File;
 use std::sync::Arc;
 use std::thread::JoinHandle;
+use std::time::Duration;
 
-use ftd_api::ftd2xx::FT_HANDLE;
-use rpc_api::ftdi_commands::request::{Close, DriverVersion, GetDetails, RPCRequest};
-use rpc_api::ftdi_commands::{response, CommandError};
+use anyhow::{bail, Context};
+use libftd2xx::{BitMode, FtStatus, Ftdi, FtdiCommon};
+use rpc_api::rpc::request::RPCRequest;
+use rpc_api::rpc::*;
+
 use std::collections::HashMap;
 
 use super::pipe::DuplexPipeConnection;
@@ -20,7 +25,10 @@ impl FTDIClient {
             let input = pipe_for_driver.to().open();
             let output = pipe_for_driver.from().open();
             log::debug!("Starting FTDI client");
-            handle_client(input, output);
+            log::warn!(
+                "FTDI client returned with error {:?}",
+                handle_client(input, output)
+            );
         });
 
         FTDIClient {
@@ -34,309 +42,215 @@ impl FTDIClient {
     }
 }
 
-fn handle_client(input: &File, output: &File) {
+/// Helper struct to manage the FTDI devices.
+#[derive(Debug, Default)]
+pub struct Devices {
+    devices: HashMap<u32, Ftdi>,
+}
+
+impl Devices {
+    /// Get the FTDI device by its handle.
+    pub fn get(&mut self, handle: u32) -> anyhow::Result<&mut Ftdi> {
+        self.devices
+            .get_mut(&handle)
+            .context("Invalid handle index")
+    }
+}
+
+fn handle_client(input: &File, output: &File) -> anyhow::Result<()> {
     log::trace!("Client handling started");
     #[cfg(target_os = "linux")]
     {
         let vendor = 0x058b;
         let product = 0x0043;
-        let result = CommandError::from_status(native::FT_SetVIDPID(vendor, product));
-        assert_eq!(result, Ok(()));
+        libftd2xx::set_vid_pid(vendor, product).expect("Failed to set VID/PID");
     }
-    let mut state = LocalState::new();
-    let mut handle_counter = 1;
+
+    // List of devices mapped to their handle index.
+    let mut devices = Devices::default();
+    let mut handle_index = 1;
+
     while let Ok(request) = ciborium::de::from_reader(input) {
-        let request: RPCRequest = request;
         let response = match request {
-            RPCRequest::Close(Close { handle }) => {
-                let current_handle = state.devices.get(&handle).unwrap();
-                let result = unsafe { native::FT_Close(*current_handle) };
-                let result = CommandError::from_status(result);
+            RPCRequest::Close(body) => {
+                let handle = devices.get(body.handle)?;
+                let status = handle.close();
 
-                response::RPCResponse {
-                    body: response::ResponseBody::Close(response::Close {}),
-                    status: result,
-                }
+                RPCResponse::from_result(status, response::Close {})
             }
-            RPCRequest::DriverVersion(DriverVersion { handle }) => {
-                let current_handle = state.devices.get(&handle).unwrap();
-                let mut version: u32 = 0;
-                let result = unsafe { native::FT_GetDriverVersion(*current_handle, &mut version) };
-                let result = CommandError::from_status(result);
+            RPCRequest::DriverVersion(body) => {
+                let handle = devices.get(body.handle)?;
+                let status = handle.driver_version();
 
-                response::RPCResponse {
-                    body: response::ResponseBody::DriverVersion(response::DriverVersion {
-                        version,
-                    }),
-                    status: result,
-                }
+                let mut version = 0u32;
+                let status = status.map(|v| {
+                    version = ((v.major as u32) << 16) | ((v.minor as u32) << 8) | (v.build as u32);
+                });
+
+                RPCResponse::from_result(status, response::DriverVersion { version })
             }
             RPCRequest::LibraryVersion(_) => {
-                let mut version: u32 = 0;
-                let result = unsafe { native::FT_GetLibraryVersion(&mut version) };
-                let result = CommandError::from_status(result);
+                let status = libftd2xx::library_version();
 
-                response::RPCResponse {
-                    body: response::ResponseBody::LibraryVersion(response::LibraryVersion {
-                        version,
-                    }),
-                    status: result,
-                }
+                let mut version = 0u32;
+                let status = status.map(|v| {
+                    version = ((v.major as u32) << 16) | ((v.minor as u32) << 8) | (v.build as u32);
+                });
+
+                RPCResponse::from_result(status, response::LibraryVersion { version })
             }
-            RPCRequest::Read(read) => {
-                let current_handle = state.devices.get(&read.handle).unwrap();
-                let mut data = Vec::<u8>::with_capacity(read.max_data_len as usize);
-                let mut counter = read.max_data_len;
-                while counter > 0 {
-                    data.push(0);
-                    counter -= 1;
-                }
-                let mut bytes_read: u32 = 0;
-                let data_address = data.as_mut_slice().as_mut_ptr();
-                let data_len = read.max_data_len;
-                assert!(read.max_data_len as usize == data.len());
-                let result = unsafe {
-                    native::FT_Read(
-                        *current_handle,
-                        data_address as *mut c_void,
-                        data_len,
-                        &mut bytes_read,
-                    )
+            RPCRequest::Read(body) => {
+                let handle = devices.get(body.handle)?;
+
+                let mut buffer = vec![0u8; body.max_data_len as usize];
+                let status = handle.read(buffer.as_mut_slice());
+
+                let status = status.map(|read| {
+                    buffer.truncate(read);
+                });
+
+                RPCResponse::from_result(status, response::Read { data: buffer })
+            }
+            RPCRequest::Write(body) => {
+                let handle = devices.get(body.handle)?;
+                let status = handle.write(body.data.as_slice());
+
+                let mut length = 0;
+                let status = status.map(|w| {
+                    length = w as u32;
+                });
+
+                RPCResponse::from_result(status, response::Write { length })
+            }
+            RPCRequest::SetBitMode(body) => {
+                let handle = devices.get(body.handle)?;
+                let status = handle.set_bit_mode(body.mask, BitMode::from(body.mode));
+
+                RPCResponse::from_result(status, response::SetBitMode {})
+            }
+            RPCRequest::SetFlowControl(body) => {
+                let handle = devices.get(body.handle)?;
+
+                let status = match body.flow_control {
+                    0 => handle.set_flow_control_none(),
+                    1 => handle.set_flow_control_rts_cts(),
+                    2 => handle.set_flow_control_dtr_dsr(),
+                    3 => handle.set_flow_control_xon_xoff(body.on, body.off),
+                    _ => Err(FtStatus::INVALID_PARAMETER),
                 };
-                let result = CommandError::from_status(result);
-                data.truncate(bytes_read as usize);
 
-                response::RPCResponse {
-                    body: response::ResponseBody::Read(response::Read { data }),
-                    status: result,
-                }
+                RPCResponse::from_result(status, response::SetFlowControl {})
             }
-            RPCRequest::Write(mut input) => {
-                let current_handle = state.devices.get(&input.handle).unwrap();
-                let address = input.data.as_slice().as_ptr();
-                assert_eq!(address, &mut input.data.as_mut_slice()[0] as *const u8);
-                let mut bytes_written = 0;
-                let result = unsafe {
-                    native::FT_Write(
-                        *current_handle,
-                        address as *mut c_void,
-                        input.data.len() as u32,
-                        &mut bytes_written,
-                    )
-                };
-                let result = CommandError::from_status(result);
-                let response = response::RPCResponse {
-                    body: response::ResponseBody::Write(response::Write {
-                        length: bytes_written,
-                    }),
-                    status: result,
-                };
-                drop(input);
-                response
-            }
-            RPCRequest::SetBitMode(t) => {
-                let current_handle = state.devices.get(&t.handle).unwrap();
-                let result = unsafe { native::FT_SetBitMode(*current_handle, t.mask, t.mode) };
-                let result = CommandError::from_status(result);
+            RPCRequest::SetLatencyTimer(body) => {
+                let handle = devices.get(body.handle)?;
+                let timer = Duration::from_millis(body.timer_ms as u64);
 
-                response::RPCResponse {
-                    body: response::ResponseBody::SetBitMode(response::SetBitMode {}),
-                    status: result,
-                }
-            }
-            RPCRequest::SetFlowControl(t) => {
-                let current_handle = state.devices.get(&t.handle).unwrap();
-                let result = unsafe {
-                    native::FT_SetFlowControl(*current_handle, t.flow_control, t.on, t.off)
-                };
-                let result = CommandError::from_status(result);
+                let status = handle.set_latency_timer(timer);
 
-                response::RPCResponse {
-                    body: response::ResponseBody::SetFlowControl(response::SetFlowControl {}),
-                    status: result,
-                }
+                RPCResponse::from_result(status, response::SetLatencyTimer {})
             }
-            RPCRequest::SetLatencyTimer(t) => {
-                let current_handle = state.devices.get(&t.handle).unwrap();
-                let result = unsafe { native::FT_SetLatencyTimer(*current_handle, t.timer_ms) };
-                let result = CommandError::from_status(result);
+            RPCRequest::SetTimeouts(body) => {
+                let handle = devices.get(body.handle)?;
+                let read_timeout = Duration::from_millis(body.read_ms as u64);
+                let write_timeout = Duration::from_millis(body.write_ms as u64);
 
-                response::RPCResponse {
-                    body: response::ResponseBody::SetLatencyTimer(response::SetLatencyTimer {}),
-                    status: result,
-                }
+                let status = handle.set_timeouts(read_timeout, write_timeout);
+
+                RPCResponse::from_result(status, response::SetTimeouts {})
             }
-            RPCRequest::SetTimeouts(st) => {
-                let current_handle = state.devices.get(&st.handle).unwrap();
-                let result =
-                    unsafe { native::FT_SetTimeouts(*current_handle, st.read_ms, st.write_ms) };
-                let result = CommandError::from_status(result);
+            RPCRequest::SetChars(body) => {
+                let handle = devices.get(body.handle)?;
+                let status = handle.set_chars(
+                    body.event_character,
+                    body.event_character_enable != 0,
+                    body.error_character,
+                    body.error_character_enabled != 0,
+                );
 
-                response::RPCResponse {
-                    body: response::ResponseBody::SetTimeouts(response::SetTimeouts {}),
-                    status: result,
-                }
+                RPCResponse::from_result(status, response::SetChars {})
             }
-            RPCRequest::SetChars(s) => {
-                let current_handle = state.devices.get(&s.handle).unwrap();
-                let result = unsafe {
-                    native::FT_SetChars(
-                        *current_handle,
-                        s.event_character,
-                        s.event_character_enable,
-                        s.error_character,
-                        s.error_character_enabled,
-                    )
-                };
-                let result = CommandError::from_status(result);
+            RPCRequest::SetUSBParameters(body) => {
+                let handle = devices.get(body.handle)?;
+                let status = handle.set_usb_parameters(body.transfer_size_in);
 
-                response::RPCResponse {
-                    body: response::ResponseBody::SetChars(response::SetChars {}),
-                    status: result,
-                }
+                RPCResponse::from_result(status, response::SetUSBParameters {})
             }
-            RPCRequest::SetUSBParameters(p) => {
-                let current_handle = state.devices.get(&p.handle).unwrap();
-                let result = unsafe {
-                    native::FT_SetUSBParameters(
-                        *current_handle,
-                        p.transfer_size_in,
-                        p.transfer_size_out,
-                    )
-                };
-                let result = CommandError::from_status(result);
+            RPCRequest::QueueLength(body) => {
+                let handle = devices.get(body.handle)?;
+                let status = handle.queue_status();
 
-                response::RPCResponse {
-                    body: response::ResponseBody::SetUSBParameters(response::SetUSBParameters {}),
-                    status: result,
-                }
+                let mut length = 0_u32;
+                let status = status.map(|l| {
+                    length = l as u32;
+                });
+
+                RPCResponse::from_result(status, response::QueueLength { length })
             }
-            RPCRequest::QueueLength(q) => {
-                let current_handle = state.devices.get(&q.handle).unwrap();
-                let mut queue_length = 0;
-                let result =
-                    unsafe { native::FT_GetQueueStatus(*current_handle, &mut queue_length) };
-                let result = CommandError::from_status(result);
+            RPCRequest::ResetDevice(body) => {
+                let handle = devices.get(body.handle)?;
+                let status = handle.reset();
 
-                response::RPCResponse {
-                    body: response::ResponseBody::QueueLength(response::QueueLength {
-                        length: queue_length,
-                    }),
-                    status: result,
-                }
+                RPCResponse::from_result(status, response::ResetDevice {})
             }
-            RPCRequest::ResetDevice(d) => {
-                let current_handle = state.devices.get(&d.handle).unwrap();
-                // println!("Resetting device {:?}", current_handle);
-                let result = unsafe { native::FT_ResetDevice(*current_handle) };
-                let result = CommandError::from_status(result);
+            RPCRequest::Open(body) => {
+                let handle = Ftdi::with_index(body.number);
 
-                response::RPCResponse {
-                    body: response::ResponseBody::ResetDevice(response::ResetDevice {}),
-                    status: result,
-                }
-            }
-            RPCRequest::Open(r) => {
-                let mut handle: FT_HANDLE = core::ptr::null_mut();
-                let result = unsafe { native::FT_Open(r.number, &mut handle) };
-                let result = CommandError::from_status(result);
-                handle_counter += 1;
-                if result.is_ok() {
-                    // println!("Registering internal handle {:?} at index {}", handle, handle_counter);
-                    state.devices.insert(handle_counter, handle);
-                }
+                let status = handle.map(|device| {
+                    handle_index += 1;
+                    devices.devices.insert(handle_index, device);
+                });
 
-                response::RPCResponse {
-                    body: response::ResponseBody::Open(response::Open {
-                        handle_value: handle_counter,
-                    }),
-                    status: result,
-                }
+                RPCResponse::from_result(
+                    status,
+                    response::Open {
+                        handle_value: handle_index,
+                    },
+                )
             }
             RPCRequest::CreateDeviceInfoList(_) => {
-                let mut device: u32 = 0;
-                let result = unsafe { native::FT_CreateDeviceInfoList(&mut device) };
-                let result = CommandError::from_status(result);
-                // println!("Requested device info list, device number are {:?}", device);
+                let status = libftd2xx::num_devices();
 
-                response::RPCResponse {
-                    body: response::ResponseBody::CreateDeviceInfoList(
-                        response::CreateDeviceInfoList {
-                            number_connected: device,
-                        },
-                    ),
-                    status: result,
-                }
+                let mut connected = 0;
+                let status = status.map(|n| {
+                    connected = n;
+                });
+
+                RPCResponse::from_result(
+                    status,
+                    response::CreateDeviceInfoList {
+                        number_connected: connected,
+                    },
+                )
             }
-            RPCRequest::GetDetails(GetDetails { device_index }) => {
-                let mut handle: FT_HANDLE = core::ptr::null_mut();
-                let mut flags = 0;
-                let mut device_type = 0;
-                let mut device_id = 0;
-                let mut device_location = 0;
-                let mut serial_data = [0; 128];
-                let mut description = [0; 128];
-                let result = unsafe {
-                    native::FT_GetDeviceInfoDetail(
-                        device_index,
-                        &mut flags,
-                        &mut device_type,
-                        &mut device_id,
-                        &mut device_location,
-                        serial_data.as_mut_ptr() as *mut c_void,
-                        description.as_mut_ptr() as *mut c_void,
-                        &mut handle,
-                    )
-                };
-                let result = CommandError::from_status(result);
-                handle_counter += 1;
-                if result.is_ok() {
-                    // println!("Registering internal handle {:?} at index {}", handle, handle_counter);
-                    state.devices.insert(handle_counter, handle);
-                }
+            // # TODO
+            // The upstream library does not have the exact method we used before. I assume
+            // the device index is the index of the vector.
+            //
+            // Also, the inner fields are not available in the upstream library. Not sure why.
+            RPCRequest::GetDetails(body) => {
+                let status = libftd2xx::list_devices();
 
-                let detail_reponse = response::GetDetails {
-                    flags,
-                    device_type,
-                    device_id,
-                    device_location,
-                    serial_number: str_from_null_terminated_utf8_safe(&serial_data).to_owned(),
-                    description: str_from_null_terminated_utf8_safe(&description).to_owned(),
-                    handle_value: handle_counter,
-                };
+                let mut details = response::GetDetails::default();
+                let status = status.and_then(|devices| {
+                    let device = devices
+                        .get(body.device_index as usize)
+                        .ok_or(FtStatus::DEVICE_NOT_FOUND);
+                    if let Ok(device) = device {
+                        details.handle_value = handle_index;
+                        details.device_type = device.device_type as u32;
+                        details.serial_number = device.serial_number.clone();
+                        details.description = device.description.clone();
+                    }
 
-                response::RPCResponse {
-                    body: response::ResponseBody::GetDetails(detail_reponse),
-                    status: result,
-                }
+                    device.map(|_| {})
+                });
+
+                RPCResponse::from_result(status, details)
             }
         };
-        ciborium::ser::into_writer(&response, output).unwrap();
+
+        ciborium::ser::into_writer(&response, output)?;
     }
-    log::warn!("Failed to read from input");
-}
 
-pub struct LocalState {
-    devices: HashMap<u32, FT_HANDLE>,
-}
-
-impl LocalState {
-    fn new() -> Self {
-        LocalState {
-            devices: HashMap::new(),
-        }
-    }
-}
-
-fn str_from_null_terminated_utf8_safe(s: &[u8]) -> &str {
-    if s.iter().any(|&x| x == 0) {
-        unsafe { str_from_null_terminated_utf8(s) }
-    } else {
-        std::str::from_utf8(s).unwrap()
-    }
-}
-
-// unsafe: s must contain a null byte
-unsafe fn str_from_null_terminated_utf8(s: &[u8]) -> &str {
-    CStr::from_ptr(s.as_ptr() as *const _).to_str().unwrap()
+    bail!("Failed to read from input")
 }
