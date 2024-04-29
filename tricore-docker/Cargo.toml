@@ -9,13 +9,15 @@ repository.workspace = true
 
 [dependencies]
 anyhow = "1.0.70"
-log = "0.4.17"
+clap = { version = "4.1.13", features = ["derive"] }
 ciborium = "0.2.0"
-clap = { version = "4.1.13", features = ["derive"]}
-tempfile = "3.4.0"
+libftd2xx-ffi = "0.8.6"
+log = "0.4.17"
 rpc-api = { path = "rpc-api" }
+tempfile = "3.4.0"
 tricore-common = { path = "../tricore-common" }
 
 [dependencies.libftd2xx]
 version = "0.32.4"
 features = ["static"]
+

@@ -8,6 +8,7 @@ use std::time::Duration;
 
 use anyhow::{bail, Context};
 use libftd2xx::{BitMode, FtStatus, Ftdi, FtdiCommon};
+use libftd2xx_ffi::{FT_FLOW_DTR_DSR, FT_FLOW_NONE, FT_FLOW_RTS_CTS, FT_FLOW_XON_XOFF};
 use rpc_api::rpc::request::RPCRequest;
 use rpc_api::rpc::*;
 
@@ -131,12 +132,12 @@ fn handle_client(input: &File, output: &File) -> anyhow::Result<()> {
             RPCRequest::SetFlowControl(body) => {
                 let handle = devices.get(body.handle)?;
 
-                let status = match body.flow_control {
-                    0 => handle.set_flow_control_none(),
-                    1 => handle.set_flow_control_rts_cts(),
-                    2 => handle.set_flow_control_dtr_dsr(),
-                    3 => handle.set_flow_control_xon_xoff(body.on, body.off),
-                    _ => Err(FtStatus::INVALID_PARAMETER),
+                let status = match body.flow_control as u32 {
+                    FT_FLOW_NONE => handle.set_flow_control_none(),
+                    FT_FLOW_RTS_CTS => handle.set_flow_control_rts_cts(),
+                    FT_FLOW_DTR_DSR => handle.set_flow_control_dtr_dsr(),
+                    FT_FLOW_XON_XOFF => handle.set_flow_control_xon_xoff(body.on, body.off),
+                    _ => panic!("Invalid flow control value {}", body.flow_control),
                 };
 
                 RPCResponse::from_result(status, response::SetFlowControl {})
