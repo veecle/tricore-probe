@@ -15,11 +15,17 @@ use rpc_api::win_daemon::log::PipeLogger;
 static CONNECTION: Mutex<LocalState> = Mutex::new(LocalState::new());
 
 /// Helper to do a RPC request to the FTDI server.
-fn do_request(request: impl Into<RPCRequest>) -> anyhow::Result<RPCResponse> {
-    CONNECTION
+fn do_request(debug_name: &str, request: impl Into<RPCRequest>) -> anyhow::Result<RPCResponse> {
+    let request = RPCRequest::from(request.into());
+    log::trace!("[{debug_name}] request: {request:?}");
+    
+    let response = CONNECTION
         .lock()
         .unwrap()
-        .with_connection(|con| con.request(request.into()))
+        .with_connection(|con| con.request(request))?;
+
+    log::trace!("[{debug_name}] response: {response:?}");
+    Ok(response)
 }
 
 pub struct Connection {
@@ -85,7 +91,7 @@ impl LocalState {
 
 /// [libftd2xx_ffi::FT_Open]
 pub fn open(device_number: i32, p_handle: *mut FT_HANDLE) -> anyhow::Result<FT_STATUS> {
-    let response = do_request(request::Open {
+    let response = do_request("FT_Open", request::Open {
         number: device_number,
     })?;
 
@@ -96,7 +102,7 @@ pub fn open(device_number: i32, p_handle: *mut FT_HANDLE) -> anyhow::Result<FT_S
 
 /// [libftd2xx_ffi::FT_CreateDeviceInfoList]
 pub fn create_device_info_list(num_devices: *mut u32) -> anyhow::Result<FT_STATUS> {
-    let response = do_request(request::CreateDeviceInfoList {})?;
+    let response = do_request("FT_CreateDeviceInfoList", request::CreateDeviceInfoList {})?;
 
     response.map_result(|body: response::CreateDeviceInfoList| unsafe {
         *num_devices = body.number_connected;
@@ -114,7 +120,7 @@ pub fn get_device_info_detail(
     lp_description: LPVOID,
     pft_handle: *mut FT_HANDLE,
 ) -> anyhow::Result<FT_STATUS> {
-    let response = do_request(request::GetDetails {
+    let response = do_request("FT_GetDeviceInfoDetail", request::GetDetails {
         device_index: dw_index,
     })?;
 
@@ -141,7 +147,7 @@ pub fn get_device_info_detail(
 
 /// [libftd2xx_ffi::FT_ResetDevice]
 pub fn reset_device(handle: FT_HANDLE) -> anyhow::Result<FT_STATUS> {
-    let response = do_request(request::ResetDevice {
+    let response = do_request("FT_ResetDevice", request::ResetDevice {
         handle: handle as u32,
     })?;
 
@@ -150,7 +156,7 @@ pub fn reset_device(handle: FT_HANDLE) -> anyhow::Result<FT_STATUS> {
 
 /// [libftd2xx_ffi::FT_GetQueueStatus]
 pub fn get_queue_status(handle: FT_HANDLE, queue_length: LPDWORD) -> anyhow::Result<FT_STATUS> {
-    let response = do_request(request::QueueLength {
+    let response = do_request("FT_GetQueueStatus", request::QueueLength {
         handle: handle as u32,
     })?;
 
@@ -165,7 +171,7 @@ pub fn set_usb_parameters(
     transfer_in: DWORD,
     transfer_out: DWORD,
 ) -> anyhow::Result<FT_STATUS> {
-    let response = do_request(request::SetUSBParameters {
+    let response = do_request("FT_SetUSBParameters", request::SetUSBParameters {
         handle: handle as u32,
         transfer_size_in: transfer_in,
         transfer_size_out: transfer_out,
@@ -182,7 +188,7 @@ pub fn set_chars(
     error_character: u8,
     error_character_enabled: u8,
 ) -> anyhow::Result<FT_STATUS> {
-    let response = do_request(request::SetChars {
+    let response = do_request("FT_SetChars", request::SetChars {
         handle: handle as u32,
         error_character,
         error_character_enabled,
@@ -195,7 +201,7 @@ pub fn set_chars(
 
 /// [libftd2xx_ffi::FT_SetTimeouts]
 pub fn set_timeouts(handle: FT_HANDLE, read_ms: u32, write_ms: u32) -> anyhow::Result<FT_STATUS> {
-    let response = do_request(request::SetTimeouts {
+    let response = do_request("FT_SetTimeouts", request::SetTimeouts {
         handle: handle as u32,
         read_ms,
         write_ms,
@@ -206,7 +212,7 @@ pub fn set_timeouts(handle: FT_HANDLE, read_ms: u32, write_ms: u32) -> anyhow::R
 
 /// [libftd2xx_ffi::FT_SetLatencyTimer]
 pub fn set_latency_timer(handle: FT_HANDLE, timer_ms: u8) -> anyhow::Result<FT_STATUS> {
-    let response = do_request(request::SetLatencyTimer {
+    let response = do_request("FT_SetLatencyTimer", request::SetLatencyTimer {
         handle: handle as u32,
         timer_ms,
     })?;
@@ -221,7 +227,7 @@ pub fn set_flow_control(
     on: u8,
     off: u8,
 ) -> anyhow::Result<FT_STATUS> {
-    let response = do_request(request::SetFlowControl {
+    let response = do_request("FT_SetFlowControl", request::SetFlowControl {
         handle: handle as u32,
         flow_control,
         off,
@@ -233,7 +239,7 @@ pub fn set_flow_control(
 
 /// [libftd2xx_ffi::FT_SetBitMode]
 pub fn set_bit_mode(handle: FT_HANDLE, mask: u8, mode: u8) -> anyhow::Result<FT_STATUS> {
-    let response = do_request(request::SetBitMode {
+    let response = do_request("FT_SetBitMode", request::SetBitMode {
         handle: handle as u32,
         mask,
         mode,
@@ -253,7 +259,7 @@ pub fn write(
     let data = buffer as *mut u8;
     let slice = unsafe { core::slice::from_raw_parts(data, bytes_write as usize) };
 
-    let response = do_request(request::Write {
+    let response = do_request("FT_Write", request::Write {
         handle: handle as u32,
         data: slice.to_vec(),
     })?;
@@ -270,10 +276,11 @@ pub fn read(
     buffer_length: u32,
     data_read: *mut u32,
 ) -> anyhow::Result<FT_STATUS> {
-    let response = do_request(request::Read {
+    let response = do_request("FT_Read", request::Read {
         handle: handle as u32,
         max_data_len: buffer_length,
     })?;
+    
 
     response.map_result(|body: response::Read| {
         let data = buffer as *mut u8;
@@ -288,7 +295,7 @@ pub fn read(
 
 /// [libftd2xx_ffi::FT_GetLibraryVersion]
 pub fn library_version(version: *mut u32) -> anyhow::Result<FT_STATUS> {
-    let response = do_request(request::LibraryVersion {})?;
+    let response = do_request("FT_GetLibraryVersion", request::LibraryVersion {})?;
 
     response.map_result(|body: response::LibraryVersion| {
         unsafe { *version = body.version };
@@ -297,7 +304,7 @@ pub fn library_version(version: *mut u32) -> anyhow::Result<FT_STATUS> {
 
 /// [libftd2xx_ffi::FT_GetDriverVersion]
 pub fn get_driver_version(handle: FT_HANDLE, version: *mut u32) -> anyhow::Result<FT_STATUS> {
-    let response = do_request(request::DriverVersion {
+    let response = do_request("FT_GetDriverVersion", request::DriverVersion {
         handle: handle as u32,
     })?;
 
@@ -308,7 +315,7 @@ pub fn get_driver_version(handle: FT_HANDLE, version: *mut u32) -> anyhow::Resul
 
 /// [libftd2xx_ffi::FT_Close]
 pub fn close(handle: FT_HANDLE) -> anyhow::Result<FT_STATUS> {
-    let response = do_request(request::Close {
+    let response = do_request("FT_Close", request::Close {
         handle: handle as u32,
     })?;
 
