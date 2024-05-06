@@ -43,7 +43,9 @@ impl Chip for ChipInterface {
     type Device = DeviceSelection;
 
     fn list_devices(&mut self) -> anyhow::Result<Vec<Self::Device>> {
+        log::debug!("Before connection attempt");
         let connection = self.attempt_connection()?;
+        log::debug!("After connection attempt");
         Ok(connection
             .servers()
             .enumerate()
@@ -58,13 +60,14 @@ impl Chip for ChipInterface {
     }
 
     fn new(_config: Self::Config) -> anyhow::Result<Self> {
-        #[cfg(not(feature = "dasv8"))]
-        {
-            std::thread::spawn(|| das::run_console().expect("Background process crashed"));
-            // We need to wait a bit so that DAS is booted up correctly and sees
-            // all connected chips
-            std::thread::sleep(Duration::from_millis(800));
-        }
+       // #[cfg(not(feature = "dasv8"))]
+
+        log::debug!("Spawning DAS console.");
+        std::thread::spawn(|| das::run_console().expect("Background process crashed"));
+        // We need to wait a bit so that DAS is booted up correctly and sees
+        // all connected chips
+        std::thread::sleep(Duration::from_millis(800));
+
         rust_mcd::library::init();
         Ok(ChipInterface {
             device: None,
@@ -157,7 +160,9 @@ impl ChipInterface {
 
     fn attempt_connection(&mut self) -> anyhow::Result<&Scan> {
         if self.scan_result.is_none() {
+            log::debug!("New scan");
             self.scan_result = Some(Scan::new()?);
+            log::debug!("New scan done");
         }
 
         Ok(self.scan_result.as_ref().unwrap())

@@ -38,10 +38,6 @@ struct Args {
     #[arg(long, value_parser = existing_path)]
     log_file: Option<PathBuf>,
 
-    /// A path to a file where to write log messages to (for the custom ftd2xx dll)
-    #[arg(long, value_parser = existing_path)]
-    ftd2xx_log_file: Option<PathBuf>,
-
     /// Windows configuration
     #[command(flatten)]
     backend: Config,
@@ -64,16 +60,7 @@ fn main() -> Result<(), anyhow::Error> {
         env_logger::init();
     }
 
-    let to_driver = args.out_to_driver;
-    let from_driver = args.in_from_driver;
-
-    std::env::set_var("FTD2XX_PIPE_FROM_DRIVER", &from_driver);
-    std::env::set_var("FTD2XX_PIPE_TO_DRIVER", &to_driver);
-
-    if let Some(path) = args.ftd2xx_log_file {
-        std::env::set_var("FTD2XX_LOGS", &path);
-    }
-
+    log::info!("Creating ChipInterface");
     let mut interface = ChipInterface::new(args.backend)?;
 
     let mut scanned_devices = None;
@@ -81,7 +68,7 @@ fn main() -> Result<(), anyhow::Error> {
     const WAIT_TIME: Duration = Duration::from_secs(2);
     log::info!("Waiting {:?} for UDAS to start", WAIT_TIME);
     std::thread::sleep(WAIT_TIME);
-
+    
     let mut command_connection =
         CommandServer::new(args.out_commands.as_path(), args.in_commands.as_path());
 
@@ -106,6 +93,7 @@ fn main() -> Result<(), anyhow::Error> {
             Commands::ListDevices => {
                 log::debug!("Retrieving list of devices");
                 scanned_devices = Some(interface.list_devices()?);
+                log::debug!("Got scanned devices");
                 command_connection.send_answer(Response::Devices(
                     scanned_devices
                         .as_ref()
@@ -113,7 +101,8 @@ fn main() -> Result<(), anyhow::Error> {
                         .iter()
                         .map(|d| DeviceInfo::new(d.udas_port, d.info.acc_hw().to_owned()))
                         .collect(),
-                ))
+                ));
+                log::debug!("Done with ListDevices");
             }
             Commands::Connect(device_info) => {
                 if let Some(device_info) = device_info {

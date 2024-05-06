@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::process::{Command, Stdio};
 
 use anyhow::Context;
@@ -49,11 +50,31 @@ impl<'a, 'pipe> DockerBuilder<'a, 'pipe> {
     }
 
     pub fn build(self) -> DockerInstance<Created<'a>> {
+        let mut enumerator = udev::Enumerator::new().unwrap();
+        enumerator.match_subsystem("usb").unwrap();
+        enumerator.match_property("ID_VENDOR_FROM_DATABASE", "Infineon Technologies").unwrap();
+        let mut devices: HashSet<String> = HashSet::new();
+        for device in enumerator.scan_devices().unwrap() {
+            if let Some(dev_node) = device.devnode(){
+                devices.insert(dev_node.to_str().unwrap().to_owned());
+            }
+        }
+
+        let mut dev_path_param = Vec::new();
+        for dev_path in devices{
+            println!("--device {}:{}", dev_path, dev_path);
+            dev_path_param.push("--device".to_string());
+            dev_path_param.push(format!("{}:{}", dev_path, dev_path));
+        }
+
+
+
         let mut docker_command = Command::new("docker");
         let command = docker_command
             .stderr(Stdio::inherit())
             .stdout(Stdio::inherit())
-            .args(["run", "--init", "--rm", "--network=host"]);
+            .args(["run", "--init",])
+            .args(dev_path_param);
 
         let mut daemon_command = "RUST_LOG=trace xvfb-run wine64 win-daemon.exe".to_owned();
 

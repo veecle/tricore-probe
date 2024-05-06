@@ -49,6 +49,7 @@ impl MemtoolUpload {
             .context("Cannot create temporary memtool batch file")?;
 
         let mut process = Command::new(env!("MEMTOOL_PATH")); // MEMTOOL_PATH is checked in the build.rs
+        process.env("FTDID", "058b:0043");
 
         let process = process
             .arg("-c")

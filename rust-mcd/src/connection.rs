@@ -9,12 +9,16 @@ pub struct Scan {
 impl Scan {
     /// Scans for all servers reported by the MCD library.
     pub fn new() -> anyhow::Result<Self> {
+        log::debug!("Starting new scan");
         let host = CStr::from_bytes_with_nul(b"localhost\0").unwrap();
+        log::debug!("Created host");
         let server_count = MCD_LIB.query_server_count(host)?;
+        log::debug!("Queried server count");
         let servers = MCD_LIB
             .query_server_infos(host, server_count)
             .add_mcd_error_info(None)?;
-
+        log::debug!("Queried server info");
+        
         let connection = Scan { servers };
 
         log::trace!("Scanned for servers, found {connection:?}");

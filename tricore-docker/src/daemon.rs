@@ -21,7 +21,6 @@ impl VirtualizedDaemon {
         rpc_channel_ftdi: Arc<DuplexPipeConnection>,
     ) -> anyhow::Result<Self> {
         let log_file = Pipe::new();
-        let ftd2xx_log_file = Pipe::new();
 
         let mut builder = DockerBuilder::new();
 
@@ -32,7 +31,6 @@ impl VirtualizedDaemon {
         let docker = builder
             .image_name("veecle/flash-tricore")
             .named("tricore-probe")
-            .add_pipe_as_argument("ftd2xx-log-file", &ftd2xx_log_file)
             .add_pipe_as_argument("log-file", &log_file)
             .add_pipe_as_argument("in-from-driver", rpc_channel_ftdi.from())
             .add_pipe_as_argument("out-to-driver", rpc_channel_ftdi.to())
@@ -41,7 +39,6 @@ impl VirtualizedDaemon {
             .build();
 
         logger::spawn_piped(log_file, "docker");
-        logger::spawn_piped(ftd2xx_log_file, "ftd2xx");
 
         let running_instance = docker.spawn().unwrap();
 
