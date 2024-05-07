@@ -18,6 +18,3 @@ thiserror = "1.0.48"
 [build-dependencies]
 bindgen = "0.69.4"
 
-[features]
-# Enable if using DAS version 8 over version 7
-dasv8 = []
