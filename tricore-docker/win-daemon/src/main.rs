@@ -75,7 +75,7 @@ fn main() -> Result<(), anyhow::Error> {
     while let Ok(command) = command_connection.next_command() {
         match command {
             Commands::WriteHex(hex) => {
-                interface.flash_hex(hex.elf_data, hex.halt_memtool)?;
+                interface.flash_hex(hex.elf_data)?;
                 command_connection.send_answer(Response::Ok);
             }
             Commands::Reset => {

@@ -75,12 +75,12 @@ impl Chip for ChipInterface {
         })
     }
 
-    fn flash_hex(&mut self, ihex: String, halt_memtool: bool) -> anyhow::Result<()> {
+    fn flash_hex(&mut self, ihex: String) -> anyhow::Result<()> {
         let device = self
             .get_selected_device()
             .context("Failed to identify target device for memtool")?;
 
-        let mut upload = MemtoolUpload::start(ihex, halt_memtool, device.udas_port)
+        let mut upload = MemtoolUpload::start(ihex,  device.udas_port)
             .context("Failed to run memtool")?;
 
         upload.wait();

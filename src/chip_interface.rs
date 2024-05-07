@@ -53,12 +53,12 @@ where
 
     /// Behaves like [Chip::flash_hex], but the binary is specified as a path to an elf
     /// file instead of provided as Intel hex in memory.
-    pub fn flash_elf(&mut self, elf_file: &Path, halt_memtool: bool) -> anyhow::Result<()> {
+    pub fn flash_elf(&mut self, elf_file: &Path) -> anyhow::Result<()> {
         log::info!("Converting elf {} to hex file", elf_file.display());
         let elf_data = fs::read(elf_file).context("Cannot load elf file")?;
         let ihex = elf_to_hex(&elf_data).context("Cannot convert elf to hex file")?;
         log::info!("Flashing hex file");
-        self.implementation.flash_hex(ihex, halt_memtool)
+        self.implementation.flash_hex(ihex)
     }
 
     /// Behaves like [Chip::read_rtt].

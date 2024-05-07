@@ -43,13 +43,6 @@ struct Args {
     #[command(flatten)]
     backend: chip_interface::Config,
 
-    /// Stop after setting up the memtool.
-    ///
-    /// Memtool will stay open and tricore-probe will halt until memtool is
-    /// closed by the user.
-    #[arg(long, default_value_t = false)]
-    halt_memtool: bool,
-
     /// Configures the log level.
     #[arg(short, long, value_enum, required = false, default_value_t = LogLevel::Warn)]
     log_level: LogLevel,
@@ -102,7 +95,7 @@ fn main() -> anyhow::Result<()> {
 
     if !args.no_flash {
         command_server
-            .flash_elf(args.elf.as_path(), args.halt_memtool)
+            .flash_elf(args.elf.as_path())
             .context("Cannot flash elf file")?;
     } else {
         log::warn!("Flashing skipped - this might lead to malformed defmt data!")

@@ -17,14 +17,12 @@ pub enum Commands {
 #[derive(Deserialize, Serialize)]
 pub struct WriteHex {
     pub elf_data: String,
-    pub halt_memtool: bool,
 }
 
 impl Debug for WriteHex {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("WriteHex")
             .field("elf_data_size", &self.elf_data.len())
-            .field("halt_memtool", &self.halt_memtool)
             .finish()
     }
 }

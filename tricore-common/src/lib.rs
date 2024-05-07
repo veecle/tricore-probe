@@ -34,7 +34,7 @@ pub trait Chip: Sized {
     ///
     /// Implementors should stop the memtool interface after loading the binary
     /// to allow for user interaction.
-    fn flash_hex(&mut self, ihex: String, halt_memtool: bool) -> anyhow::Result<()>;
+    fn flash_hex(&mut self, ihex: String) -> anyhow::Result<()>;
 
     /// Resets the chip and pass the data found in the first channel of the specified
     /// RTT control block to the given decoder.

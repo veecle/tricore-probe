@@ -21,7 +21,7 @@ impl MemtoolUpload {
     /// UDAS port.
     ///
     /// Note that the binary must not contain unflashable sections.
-    pub fn start(ihex: String, halt_memtool: bool, udas_port: usize) -> anyhow::Result<Self> {
+    pub fn start(ihex: String, udas_port: usize) -> anyhow::Result<Self> {
         let temporary_files =
             TempDir::new().context("Cannot create temporary directory for memtool input")?;
 
