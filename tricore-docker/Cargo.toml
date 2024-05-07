@@ -16,4 +16,6 @@ tempfile = "3.4.0"
 rpc-api = { path = "rpc-api" }
 tricore-common = { path = "../tricore-common" }
 
+# Only depend on udev on linux, as it's not available on other platforms.
+[target.'cfg(target_os = "linux")'.dependencies]
 udev = {version = "0.8.0"}
