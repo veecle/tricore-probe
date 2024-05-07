@@ -1,7 +1,11 @@
 FROM ubuntu:focal
 
-RUN rm /etc/apt/sources.list
-COPY ["sources.list", "/etc/apt/sources.list"]
+# Silences interactive installers.
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Set timezone.
+ENV TZ=Europe/Berlin
+
 RUN dpkg --add-architecture i386 && apt update && apt install -y wget
 RUN mkdir -pm755 /etc/apt/keyrings
 RUN wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
@@ -12,13 +16,13 @@ RUN apt install -y xvfb
 RUN apt install -y binutils
 # Make etc.
 RUN apt install -y build-essential
-# Wine
-RUN apt install -y  --install-recommends winehq-stable
+# Wine.
+RUN apt install -y winehq-stable
 # Mutli-architecture libraries required to build wineftd2xx.
-RUN apt install -y  gcc-multilib
+RUN apt install -y gcc-multilib
 # Compiler for wineftd2xx.
-RUN apt install -y  --install-recommends wine-stable-dev
-# msiextract tool.
+RUN apt install -y wine-stable-dev
+# msiextract tool used to extract the AurixFlasher installer.
 RUN apt install -y msitools
 
 ARG AGREE_INFINEON_TERMS=0
