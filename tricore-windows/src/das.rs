@@ -10,7 +10,7 @@ use anyhow::{bail, Context};
 /// Spawns a DAS instance.
 pub fn run_console() -> anyhow::Result<()> {
     let das_home = PathBuf::from(
-        std::env::var("DAS_HOME").context("DAS_HOME not defined, is DAS installed?")?,
+        std::env::var("DAS_HOME").context("DAS_HOME not defined, is DAS installed and environment variable set?")?,
     );
 
     log::trace!("Starting tas_server_console.");
@@ -21,7 +21,7 @@ pub fn run_console() -> anyhow::Result<()> {
         .spawn()
         .context("Failed to spawn tas_server_console")?;
 
-    log::info!("DAS server started");
+    log::info!("DAS server started.");
     let result = udas_console
         .wait()
         .context("tas_server_console.exe process aborted")?;

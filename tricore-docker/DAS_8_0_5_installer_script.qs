@@ -35,7 +35,7 @@ Controller.prototype.StartMenuDirectoryPageCallback = function() {
 
 Controller.prototype.ReadyForInstallationPageCallback = function(){
     // Overwrite TargetDir parameter right before installation. Doing it before the TargetDirectoryPageCallback leads to a wrong target directory.
-    installer.setValue("TargetDir","C:/Das");
+    installer.setValue("TargetDir","C:/DAS64");
     gui.clickButton(buttons.NextButton);
 }
 

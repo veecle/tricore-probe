@@ -39,8 +39,7 @@ RUN wine DAS_V8_0_5_SETUP.exe --script DAS_8_0_5_installer_script.qs -d --al
 # Copy Aurix flasher setup.
 COPY ["aurixflashersoftwaretool_1.0.10_Windows_x64.msi", "."]
 # Extract Aurix flasher.
-RUN msiextract -C /root/.wine/dosdevices/c:/AurixFlasher aurixflashersoftwaretool_1.0.10_Windows_x64.msi
-
+RUN msiextract -C /root/.wine/dosdevices/c:/Infineon/AURIXFlasherSoftwareTool aurixflashersoftwaretool_1.0.10_Windows_x64.msi
 # Install wine mono required for AurixFlasher.
 RUN wget -O ./wine-mono-9.1.0-x86.msi https://dl.winehq.org/wine/wine-mono/9.1.0/wine-mono-9.1.0-x86.msi
 RUN msiexec /i wine-mono-9.1.0-x86.msi
@@ -54,7 +53,7 @@ RUN make install
 WORKDIR "/root/.wine/dosdevices/c:/"
 COPY ["artifacts/win-daemon.exe", "."]
 # The DAS installer places TAS server executables in both directories, so we place the DLL in both directories.
-RUN cp "/root/wineftd2xx/ftd2xx.dll.so" "Das/servers/ftd2xx.dll"
+RUN cp "/root/wineftd2xx/ftd2xx.dll.so" "DAS64/servers/ftd2xx.dll"
 RUN cp "/root/wineftd2xx/ftd2xx.dll.so" "windows/system32/ftd2xx.dll"
 
 # Wine debug channels https://wiki.winehq.org/Debug_Channels
@@ -64,7 +63,10 @@ RUN cp "/root/wineftd2xx/ftd2xx.dll.so" "windows/system32/ftd2xx.dll"
 ENV WINEDEBUG="-all"
 
 # DAS home directory.
-ENV DAS_HOME="C:\\Das"
+ENV DAS_HOME="C:\\DAS64"
+
+# AurixFlasher path.
+ENV AURIX_FLASHER_PATH="C:\\Infineon\\AURIXFlasherSoftwareTool\\AURIXFlasher.exe"
 
 CMD ["bash"]
 

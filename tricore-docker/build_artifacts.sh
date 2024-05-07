@@ -9,7 +9,7 @@ docker run \
     --workdir /build \
     --env RUST_LOG=trace \
     --env DAS_HOME="C:\\DAS64" \
-    --env MEMTOOL_PATH="C:\\Memtool\\IMTMemtool.exe" \
+    --env AURIX_FLASHER_PATH="C:\\Infineon\\AURIXFlasherSoftwareTool\\AURIXFlasher.exe" \
     veecle/xwin \
     cargo build --manifest-path tricore-docker/win-daemon/Cargo.toml -Z build-std --target x86_64-pc-windows-msvc --target-dir tricore-docker/docker-build-daemon
 

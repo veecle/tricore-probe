@@ -30,7 +30,7 @@ impl AurixFlasherUpload {
         std::fs::write(&input_hex_path, ihex)
             .context("Cannot write create temporary input hex file.")?;
 
-        let aurix_flasher_path = PathBuf::from("C:\\AurixFlasher\\AURIXFlasher.exe");
+        let aurix_flasher_path = PathBuf::from(env!("AURIX_FLASHER_PATH"));
         let mut process = Command::new(aurix_flasher_path);
 
         let process = process
@@ -63,6 +63,6 @@ impl AurixFlasherUpload {
             .wait()
             .expect("AurixFlasher did not exit with success");
         assert!(output.success());
-        log::info!("Infineon Memtool terminated successfully");
+        log::info!("AurixFlasher terminated successfully");
     }
 }

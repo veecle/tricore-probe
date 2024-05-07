@@ -62,7 +62,7 @@ impl Chip for ChipInterface {
     fn new(_config: Self::Config) -> anyhow::Result<Self> {
 
         log::debug!("Spawning DAS console.");
-        std::thread::spawn(|| das::run_console().expect("Background process crashed"));
+        std::thread::spawn(|| das::run_console().expect("Background process crashed."));
         // We need to wait a bit so that DAS is booted up correctly and sees
         // all connected chips.
         std::thread::sleep(Duration::from_millis(800));
@@ -77,10 +77,10 @@ impl Chip for ChipInterface {
     fn flash_hex(&mut self, ihex: String) -> anyhow::Result<()> {
         let device = self
             .get_selected_device()
-            .context("Failed to identify target device for memtool")?;
+            .context("Failed to identify target device for AurixFlasher.")?;
 
         let mut upload = AurixFlasherUpload::start(ihex, device.udas_port)
-            .context("Failed to run memtool")?;
+            .context("Failed to run AurixFlasher.")?;
 
         upload.wait();
 
