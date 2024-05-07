@@ -4,6 +4,7 @@ set -e
 # Build artifacts required for emulation through wine in linux
 docker run \
     --rm \
+    --user $(id -u):$(id -g) \
     --mount type=bind,source="$(pwd)/..",target=/build \
     --workdir /build \
     --env RUST_LOG=trace \
