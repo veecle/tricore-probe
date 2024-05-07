@@ -6,8 +6,6 @@ use std::{
 };
 
 use anyhow::Context;
-use log::log_enabled;
-use log::Level::Trace;
 
 /// Spawns a DAS instance.
 pub fn run_console() -> anyhow::Result<()> {
@@ -19,19 +17,11 @@ pub fn run_console() -> anyhow::Result<()> {
     log::trace!("Starting tas_server_console.");
 
     let mut udas_console = Command::new(das_home.join("servers/tas_server_console.exe"));
-    let udas_console = if log_enabled!(Trace) {
-        // Setting the argument to 8 enables the tas_server_console.
-        udas_console
-            .arg("8")
-            .stderr(Stdio::inherit())
-            .stdout(Stdio::inherit())
-    } else {
-        // Setting the argument to 0 disables all logging.
-        udas_console
-            .arg("0")
-            .stderr(Stdio::null())
-            .stdout(Stdio::null())
-    };
+    // Disable logging for the tas_server_console.
+    udas_console
+        .arg("0")
+        .stderr(Stdio::null())
+        .stdout(Stdio::null());
 
     let mut udas_console = udas_console
         .spawn()
