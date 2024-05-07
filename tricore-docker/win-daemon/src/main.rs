@@ -13,38 +13,38 @@ use clap::Parser;
 use tricore_common::Chip;
 use tricore_windows::{ChipInterface, Config};
 
-/// Program that manages the udas server and manages its connection with the Infineon
-/// memtool and the internal MCD connection
+/// Program that manages the DAS server and manages its connection with the Infineon
+/// AurixFlasher and the internal MCD connection.
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    /// A path to a file where to read data from the FTDI driver
+    /// A path to a file where to read data from the FTDI driver.
     #[arg(long, value_parser = existing_path)]
     in_from_driver: PathBuf,
 
-    /// A path to a file where to write data to the FTDI driver
+    /// A path to a file where to write data to the FTDI driver.
     #[arg(long, value_parser = existing_path)]
     out_to_driver: PathBuf,
 
-    /// A path to a file where to read commands from
+    /// A path to a file where to read commands from.
     #[arg(long, value_parser = existing_path)]
     in_commands: PathBuf,
 
-    /// A path to a file where to write commands to
+    /// A path to a file where to write commands to.
     #[arg(long, value_parser = existing_path)]
     out_commands: PathBuf,
 
-    /// A path to a file where to write log messages to
+    /// A path to a file where to write log messages to.
     #[arg(long, value_parser = existing_path)]
     log_file: Option<PathBuf>,
 
-    /// Windows configuration
+    /// Windows configuration.
     #[command(flatten)]
     backend: Config,
 }
 
 fn existing_path(input_path: &str) -> Result<PathBuf, anyhow::Error> {
-    let path = PathBuf::from_str(input_path).with_context(|| "Value is not a correct path")?;
+    let path = PathBuf::from_str(input_path).with_context(|| "Value is not a correct path.")?;
 
     Ok(path)
 }
@@ -60,13 +60,13 @@ fn main() -> Result<(), anyhow::Error> {
         env_logger::init();
     }
 
-    log::info!("Creating ChipInterface");
+    log::info!("Creating ChipInterface.");
     let mut interface = ChipInterface::new(args.backend)?;
 
     let mut scanned_devices = None;
 
     const WAIT_TIME: Duration = Duration::from_secs(2);
-    log::info!("Waiting {:?} for UDAS to start", WAIT_TIME);
+    log::info!("Waiting {:?} for DAS server console to start.", WAIT_TIME);
     std::thread::sleep(WAIT_TIME);
     
     let mut command_connection =

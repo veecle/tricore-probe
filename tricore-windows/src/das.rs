@@ -13,7 +13,7 @@ pub fn run_console() -> anyhow::Result<()> {
         std::env::var("DAS_HOME").context("DAS_HOME not defined, is DAS installed?")?,
     );
 
-    log::trace!("Starting tas_server_console, or not?");
+    log::trace!("Starting tas_server_console.");
 
     let mut udas_console = Command::new(das_home.join("servers/tas_server_console.exe"));
     let udas_console = udas_console.stderr(Stdio::inherit()).stdout(Stdio::inherit());

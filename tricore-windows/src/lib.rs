@@ -4,7 +4,7 @@ use std::{io::Write, time::Duration};
 
 use anyhow::{bail, Context, Ok};
 use defmt::{decode_rtt, HaltReason};
-use flash::MemtoolUpload;
+use flash::AurixFlasherUpload;
 use rust_mcd::{
     connection::{Scan, ServerInfo},
     reset::ResetClass,
@@ -60,12 +60,11 @@ impl Chip for ChipInterface {
     }
 
     fn new(_config: Self::Config) -> anyhow::Result<Self> {
-       // #[cfg(not(feature = "dasv8"))]
 
         log::debug!("Spawning DAS console.");
         std::thread::spawn(|| das::run_console().expect("Background process crashed"));
         // We need to wait a bit so that DAS is booted up correctly and sees
-        // all connected chips
+        // all connected chips.
         std::thread::sleep(Duration::from_millis(800));
 
         rust_mcd::library::init();
@@ -80,7 +79,7 @@ impl Chip for ChipInterface {
             .get_selected_device()
             .context("Failed to identify target device for memtool")?;
 
-        let mut upload = MemtoolUpload::start(ihex,  device.udas_port)
+        let mut upload = AurixFlasherUpload::start(ihex, device.udas_port)
             .context("Failed to run memtool")?;
 
         upload.wait();

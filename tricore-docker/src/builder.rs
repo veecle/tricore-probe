@@ -67,8 +67,6 @@ impl<'a, 'pipe> DockerBuilder<'a, 'pipe> {
             dev_path_param.push(format!("{}:{}", dev_path, dev_path));
         }
 
-
-
         let mut docker_command = Command::new("docker");
         let command = docker_command
             .stderr(Stdio::inherit())

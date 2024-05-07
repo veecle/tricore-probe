@@ -9,7 +9,7 @@ pub trait Device {
 /// Implementors provide an interface to a chip, allowing to perform basic
 /// operations on it.
 ///
-/// Implementors use the Infineon Memtool for flashing.
+/// Implementors use the Infineon AurixFlasher for flashing.
 pub trait Chip: Sized {
     /// Represents available configuration for connecting to a chip.
     type Config: clap::Args;
@@ -32,7 +32,7 @@ pub trait Chip: Sized {
 
     /// Flash the chip with the binary specified in Intel hex format
     ///
-    /// Implementors should stop the memtool interface after loading the binary
+    /// Implementors should stop the AurixFlasher interface after loading the binary
     /// to allow for user interaction.
     fn flash_hex(&mut self, ihex: String) -> anyhow::Result<()>;
 

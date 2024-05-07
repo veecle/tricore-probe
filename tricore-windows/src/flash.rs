@@ -4,31 +4,31 @@ use std::process::{Child, Command};
 use anyhow::Context;
 use tempfile::TempDir;
 
-/// Models an upload of a binary with Memtool.
-pub struct MemtoolUpload {
+/// Models an upload of a binary with AurixFlasher.
+pub struct AurixFlasherUpload {
     spawned: Child,
     _temporary_files: TempDir,
 }
 
-impl MemtoolUpload {
-    /// Uploads a binary to the default device in Memtool.
+impl AurixFlasherUpload {
+    /// Uploads a binary to the default device in AurixFlasher.
     ///
-    /// It generates a configuration file and uses Memtool's batch functionality to
+    /// It generates a configuration file and uses AurixFlasher CLI functionality to
     /// instruct the program to flash all available sections to the device.
     ///
     /// For the created operation to succeed successfully, a DAS instance must
     /// be already spawned, the device to be flashed is selected based on the given
-    /// UDAS port.
+    /// DAS port.
     ///
     /// Note that the binary must not contain unflashable sections.
     pub fn start(ihex: String, udas_port: usize) -> anyhow::Result<Self> {
         let temporary_files =
-            TempDir::new().context("Cannot create temporary directory for memtool input")?;
+            TempDir::new().context("Cannot create temporary directory for AurixFlasher input.")?;
 
         let input_hex_path = temporary_files.path().join("input.hex");
 
         std::fs::write(&input_hex_path, ihex)
-            .context("Cannot write create temporary input hex file")?;
+            .context("Cannot write create temporary input hex file.")?;
 
         let aurix_flasher_path = PathBuf::from("C:\\AurixFlasher\\AURIXFlasher.exe");
         let mut process = Command::new(aurix_flasher_path);
@@ -45,7 +45,7 @@ impl MemtoolUpload {
             .with_context(|| "Could not start AurixFlasher to flash device")?;
         log::info!("Spawned AurixFlasher to flash hex file");
 
-        Ok(MemtoolUpload {
+        Ok(AurixFlasherUpload {
             spawned,
             _temporary_files: temporary_files,
         })
