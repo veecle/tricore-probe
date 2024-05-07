@@ -68,7 +68,7 @@ fn main() -> Result<(), anyhow::Error> {
     const WAIT_TIME: Duration = Duration::from_secs(2);
     log::info!("Waiting {:?} for DAS server console to start.", WAIT_TIME);
     std::thread::sleep(WAIT_TIME);
-    
+
     let mut command_connection =
         CommandServer::new(args.out_commands.as_path(), args.in_commands.as_path());
 

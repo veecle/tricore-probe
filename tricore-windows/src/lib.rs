@@ -58,7 +58,6 @@ impl Chip for ChipInterface {
     }
 
     fn new(_config: Self::Config) -> anyhow::Result<Self> {
-
         log::debug!("Spawning DAS console.");
         std::thread::spawn(|| das::run_console().expect("Background process crashed."));
         // We need to wait a bit so that DAS is booted up correctly and sees

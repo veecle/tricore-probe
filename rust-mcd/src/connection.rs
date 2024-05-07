@@ -18,7 +18,7 @@ impl Scan {
             .query_server_infos(host, server_count)
             .add_mcd_error_info(None)?;
         log::debug!("Queried server info");
-        
+
         let connection = Scan { servers };
 
         log::trace!("Scanned for servers, found {connection:?}");

@@ -67,9 +67,7 @@ impl Chip for ChipInterface {
 
     fn flash_hex(&mut self, ihex: String) -> anyhow::Result<()> {
         log::trace!("Sending flash command to daemon");
-        let request = Commands::WriteHex(WriteHex {
-            elf_data: ihex,
-        });
+        let request = Commands::WriteHex(WriteHex { elf_data: ihex });
 
         let response = self.send_request(request)?;
 
