@@ -93,7 +93,6 @@ fn main() -> Result<(), anyhow::Error> {
             Commands::ListDevices => {
                 log::debug!("Retrieving list of devices");
                 scanned_devices = Some(interface.list_devices()?);
-                log::debug!("Got scanned devices");
                 command_connection.send_answer(Response::Devices(
                     scanned_devices
                         .as_ref()
@@ -102,7 +101,6 @@ fn main() -> Result<(), anyhow::Error> {
                         .map(|d| DeviceInfo::new(d.udas_port, d.info.acc_hw().to_owned()))
                         .collect(),
                 ));
-                log::debug!("Done with ListDevices");
             }
             Commands::Connect(device_info) => {
                 if let Some(device_info) = device_info {

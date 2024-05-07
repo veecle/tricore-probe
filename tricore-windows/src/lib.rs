@@ -43,9 +43,7 @@ impl Chip for ChipInterface {
     type Device = DeviceSelection;
 
     fn list_devices(&mut self) -> anyhow::Result<Vec<Self::Device>> {
-        log::debug!("Before connection attempt");
         let connection = self.attempt_connection()?;
-        log::debug!("After connection attempt");
         Ok(connection
             .servers()
             .enumerate()
@@ -159,9 +157,7 @@ impl ChipInterface {
 
     fn attempt_connection(&mut self) -> anyhow::Result<&Scan> {
         if self.scan_result.is_none() {
-            log::debug!("New scan");
             self.scan_result = Some(Scan::new()?);
-            log::debug!("New scan done");
         }
 
         Ok(self.scan_result.as_ref().unwrap())
