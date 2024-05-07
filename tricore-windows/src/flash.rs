@@ -35,7 +35,9 @@ impl MemtoolUpload {
 
         let process = process
             .arg("-hex")
-            .arg(input_hex_path.display().to_string());
+            .arg(input_hex_path.display().to_string())
+            .arg("-id")
+            .arg(udas_port.to_string());
         let spawned = process
             .stderr(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
