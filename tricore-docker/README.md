@@ -12,6 +12,19 @@ You consciously or accidentally decided to keep going, so how to get started?
 Note: This setup is most likely not ideal, but the first working result after a 
 long path of failed attempts.
 
+## Requirements
+`libudev` needs to be installed for linux systems.
+
+Apt:
+```bash
+sudo apt-get install libudev-dev
+```
+Dnf:
+```bash
+sudo dnf install systemd-devel
+```
+
+
 ## Prepare for building the artifacts
 You need to build one artifact for windows, specifically for the `x86_64-pc-windows-msvc`
 target. This trivially cannot be done on linux, the desired option would be to 
