@@ -29,11 +29,6 @@ byteorder = "1.5.0"
 [workspace]
 members = [
     "rust-mcd",
-    "tricore-windows",
-    "tricore-common",
-    "tricore-docker",
-    "tricore-docker/win-daemon",
-    "tricore-docker/rpc-api",
 ]
 
 [workspace.package]
