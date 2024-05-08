@@ -1,73 +1,19 @@
-use std::{fmt::Debug, fs, io::Write, path::Path};
+use std::{fmt::Debug};
+use rust_mcd::connection::ServerInfo;
+use crate::chip::Device;
 
-use crate::elf::elf_to_hex;
 
-use anyhow::Context;
-pub use imp::Config;
-use tricore_common::{backtrace::Stacktrace, Chip};
+#[derive(clap::Args, Debug)]
+pub struct Config;
 
-cfg_if::cfg_if! {
-    if #[cfg(all(feature = "docker", feature = "windows"))] {
-        compile_error!("Features 'docker' and 'windows' are mutually exclusive");
-    } else if #[cfg(feature = "docker")] {
-        use tricore_docker as imp;
-    } else if #[cfg(feature = "windows")] {
-        use tricore_windows as imp;
-    } else {
-        compile_error!("One of the features 'docker' or 'windows' must be enabled");
-    }
+#[derive(Debug, Clone, Copy)]
+pub struct DeviceSelection {
+    pub udas_port: usize,
+    pub info: ServerInfo,
 }
 
-pub type ChipInterface = ChipInterfaceImpl<imp::ChipInterface>;
-
-pub struct ChipInterfaceImpl<C: Chip> {
-    implementation: C,
-}
-
-impl<C: Chip> ChipInterfaceImpl<C>
-where
-    C::Device: Debug,
-{
-    /// Initiates a new connection to a chip.
-    pub fn new(interface_configuration: C::Config) -> anyhow::Result<Self> {
-        Ok(ChipInterfaceImpl {
-            implementation: C::new(interface_configuration)?,
-        })
-    }
-
-    /// Behaves like [Chip::list_devices].
-    pub fn list_devices(&mut self) -> anyhow::Result<Vec<C::Device>> {
-        self.implementation.list_devices()
-    }
-
-    /// Behaves like [Chip::connect].
-    pub fn connect(&mut self, device: Option<&C::Device>) -> anyhow::Result<()> {
-        if let Some(device) = device {
-            log::debug!("Connecting to device {device:?}");
-        } else {
-            log::debug!("Connecting to any available device");
-        }
-
-        self.implementation.connect(device)
-    }
-
-    /// Behaves like [Chip::flash_hex], but the binary is specified as a path to an elf
-    /// file instead of provided as Intel hex in memory.
-    pub fn flash_elf(&mut self, elf_file: &Path) -> anyhow::Result<()> {
-        log::info!("Converting elf {} to hex file", elf_file.display());
-        let elf_data = fs::read(elf_file).context("Cannot load elf file")?;
-        let ihex = elf_to_hex(&elf_data).context("Cannot convert elf to hex file")?;
-        log::info!("Flashing hex file");
-        self.implementation.flash_hex(ihex)
-    }
-
-    /// Behaves like [Chip::read_rtt].
-    pub fn read_rtt<W: Write>(
-        &mut self,
-        rtt_control_block_address: u64,
-        decoder: W,
-    ) -> anyhow::Result<Stacktrace> {
-        self.implementation
-            .read_rtt(rtt_control_block_address, decoder)
+impl Device for DeviceSelection {
+    fn hardware_description(&self) -> &str {
+        self.info.acc_hw()
     }
 }

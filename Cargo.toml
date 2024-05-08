@@ -18,17 +18,13 @@ env_logger = "0.10.0"
 elf = "0.7.1"
 colored = "2.0.0"
 cfg-if = "1.0.0"
-tricore-common = { path = "tricore-common" }
-tricore-windows = { path = "tricore-windows", optional = true}
-tricore-docker = { path = "tricore-docker", optional = true}
 
-[features]
-# These features define whether a virtualized docker setup should be used as the
-# chip interface or if (when building on windows) no indirection is needed.
-windows = ["dep:tricore-windows"]
-docker = ["dep:tricore-docker"]
+bitfield-struct = "0.3.2"
 
-default = ["windows"]
+rust-mcd = { path = "rust-mcd" }
+
+byteorder = "1.5.0"
+
 
 [workspace]
 members = [

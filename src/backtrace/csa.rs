@@ -1,7 +1,11 @@
 //! Defines structure for CSA's.
 //!
 //! See also https://www.infineon.com/dgdl/tc1_6__architecture_vol1.pdf?fileId=db3a3043372d5cc801373b0f374d5d67#G8.6699641.
-use super::pcxi::PCXI;
+
+
+use anyhow::Context;
+use rust_mcd::core::Core;
+use crate::backtrace::pcxi::PCXI;
 
 /// Represents a link word that points to a CSA.
 ///
@@ -45,7 +49,7 @@ impl SavedContext {
     /// Useful for providing additional information like the source address.
     pub fn return_address(&self) -> u32 {
         match self {
-            SavedContext::Upper(c) => c.a11, 
+            SavedContext::Upper(c) => c.a11,
             SavedContext::Lower(c) => c.a11,
         }
     }
@@ -93,4 +97,44 @@ pub struct LowerContext {
     d5: u32,
     d6: u32,
     d7: u32,
+}
+
+pub trait ContextLinkWordExt {
+    fn load(&self, core: &Core) -> anyhow::Result<SavedContext>;
+}
+
+impl ContextLinkWordExt for ContextLinkWord {
+    fn load(&self, core: &Core) -> anyhow::Result<SavedContext> {
+        log::trace!(
+            "Loading stored context from {:#8X}",
+            self.get_context_address()
+        );
+        if self.is_upper {
+            let mut upper = UpperContext::default();
+            let bytes = core
+                .read_bytes(
+                    self.get_context_address() as u64,
+                    core::mem::size_of::<UpperContext>(),
+                )
+                .with_context(|| "Cannot read saved context from memory")?;
+            assert_eq!(bytes.len(), core::mem::size_of::<UpperContext>());
+            unsafe {
+                core::ptr::copy(bytes.as_ptr() as *const UpperContext, &mut upper, 1);
+            }
+            Ok(SavedContext::Upper(upper))
+        } else {
+            let mut lower = LowerContext::default();
+            let bytes = core
+                .read_bytes(
+                    self.get_context_address() as u64,
+                    core::mem::size_of::<LowerContext>(),
+                )
+                .with_context(|| "Cannot read saved context from memory")?;
+            assert_eq!(bytes.len(), core::mem::size_of::<LowerContext>());
+            unsafe {
+                core::ptr::copy(bytes.as_ptr() as *const LowerContext, &mut lower, 1);
+            }
+            Ok(SavedContext::Lower(lower))
+        }
+    }
 }

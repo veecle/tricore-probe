@@ -10,12 +10,18 @@ pub mod backtrace;
 pub mod chip_interface;
 pub mod defmt;
 pub mod elf;
+pub mod chip;
+pub mod das;
+pub mod flash;
+mod chip_com;
+
+
 use backtrace::ParseInfo;
-use chip_interface::ChipInterface;
 use defmt::DefmtDecoder;
 use env_logger::{Builder, Target};
 use log::LevelFilter;
-use tricore_common::Device;
+use crate::chip::{Device};
+use crate::chip_com::ChipCommunication;
 
 /// Simple program to flash and interface with tricore chips.
 #[derive(Parser, Debug)]
@@ -63,7 +69,7 @@ fn main() -> anyhow::Result<()> {
         .target(Target::Stdout)
         .init();
 
-    let mut command_server = ChipInterface::new(args.backend)?;
+    let mut command_server = ChipCommunication::new()?;
 
     if args.list_devices {
         let scanned_devices = command_server.list_devices()?;
@@ -128,7 +134,7 @@ fn existing_path(input_path: &str) -> anyhow::Result<PathBuf> {
     PathBuf::from_str(input_path).with_context(|| "Value is not a correct path")
 }
 
-fn pretty_print_devices<D: tricore_common::Device>(devices: &Vec<D>) {
+fn pretty_print_devices<D: Device>(devices: &Vec<D>) {
     if devices.is_empty() {
         println!("No devices available");
         return;
