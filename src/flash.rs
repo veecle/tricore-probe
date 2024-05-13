@@ -30,7 +30,10 @@ impl AurixFlasherUpload {
         std::fs::write(&input_hex_path, ihex)
             .context("Cannot write create temporary input hex file.")?;
 
-        let aurix_flasher_path = PathBuf::from(std::env::var("AURIX_FLASHER_PATH").unwrap());
+        let aurix_flasher_path = PathBuf::from(
+            std::env::var("AURIX_FLASHER_PATH")
+                .unwrap_or("C:\\Infineon\\AURIXFlasherSoftwareTool\\AURIXFlasher.exe".to_owned()),
+        );
         let mut process = Command::new(aurix_flasher_path);
 
         let process = process
