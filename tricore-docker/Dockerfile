@@ -51,7 +51,9 @@ RUN make
 RUN make install
 
 WORKDIR "/root/.wine/dosdevices/c:/"
-COPY ["artifacts/win-daemon.exe", "."]
+COPY ["artifacts/tricore-probe.exe", "."]
+COPY ["artifacts/defmt-print.exe", "."]
+COPY ["artifacts/addr2line.exe", "."]
 # The DAS installer places TAS server executables in both directories, so we place the DLL in both directories.
 RUN cp "/root/wineftd2xx/ftd2xx.dll.so" "DAS64/servers/ftd2xx.dll"
 RUN cp "/root/wineftd2xx/ftd2xx.dll.so" "windows/system32/ftd2xx.dll"

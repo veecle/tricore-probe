@@ -9,6 +9,11 @@ use tempfile::TempDir;
 ///
 /// This function relies on the gnu utility 'objcopy' to be installed on the system.
 pub fn elf_to_hex(data: &[u8]) -> anyhow::Result<String> {
+    if cfg!(feature = "in_docker") {
+        return std::fs::read_to_string("C:\\output.hex")
+            .context("Docker: Cannot read resulting hex file");
+    }
+
     let temporary_directory = TempDir::new().context("Failed to set up temporary directory")?;
     let input_path = temporary_directory.path().join("input.elf");
 

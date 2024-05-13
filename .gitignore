@@ -1,5 +1,4 @@
-tricore-docker/docker-build-dll
-tricore-docker/docker-build-daemon
+tricore-docker/docker-build-exe
 tricore-docker/artifacts
 target
 Cargo.lock
