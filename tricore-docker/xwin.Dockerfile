@@ -1,6 +1,6 @@
 # Build this docker file with the parenting folder as the build context!
 # We'll just use the official Rust image
-FROM docker.io/library/rust:1.78.0-slim-bullseye
+FROM docker.io/library/rust:1.74.0-slim
 
 ENV KEYRINGS /usr/local/share/keyrings
 
@@ -9,10 +9,7 @@ RUN set -eux; \
     apt-get update && apt-get install -y gpg curl; \
     # clang/lld/llvm
     curl --fail https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor > $KEYRINGS/llvm.gpg; \
-    # wine
-    curl --fail https://dl.winehq.org/wine-builds/winehq.key | gpg --dearmor > $KEYRINGS/winehq.gpg; \
-    echo "deb [signed-by=$KEYRINGS/llvm.gpg] http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-13 main" > /etc/apt/sources.list.d/llvm.list; \
-    echo "deb [signed-by=$KEYRINGS/winehq.gpg] https://dl.winehq.org/wine-builds/debian/ bullseye main" > /etc/apt/sources.list.d/winehq.list;
+    echo "deb [signed-by=$KEYRINGS/llvm.gpg] http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-13 main" > /etc/apt/sources.list.d/llvm.list;
 
 RUN set -eux; \
     dpkg --add-architecture i386; \
@@ -22,8 +19,6 @@ RUN set -eux; \
         # llvm-ar
         llvm-13 \
         lld-13 \
-        # get a recent wine so we can run tests
-        winehq-staging \
         # Unpack xwin
         tar; \
     # ensure that clang/clang++ are callable directly
@@ -45,7 +40,6 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*;
 
 # Retrieve the std lib for the target
-RUN rustup toolchain install --force-non-host nightly-x86_64-pc-windows-msvc
 RUN rustup toolchain install --force-non-host stable-x86_64-pc-windows-msvc
 
 RUN set -eux; \
@@ -58,9 +52,6 @@ RUN set -eux; \
     # Remove unneeded files to reduce image size
     rm -rf .xwin-cache /usr/local/cargo/bin/xwin;
 
-# Retrieve the std lib for the target
-RUN rustup toolchain install nightly-2023-09-20
-RUN rustup component add rust-src --toolchain nightly-2023-09-20-x86_64-unknown-linux-gnu
 
 # Note that we're using the full target triple for each variable instead of the
 # simple CC/CXX/AR shorthands to avoid issues when compiling any C/C++ code for
@@ -68,10 +59,6 @@ RUN rustup component add rust-src --toolchain nightly-2023-09-20-x86_64-unknown-
 ENV CC_x86_64_pc_windows_msvc="clang-cl" \
     CXX_x86_64_pc_windows_msvc="clang-cl" \
     AR_x86_64_pc_windows_msvc="llvm-lib" \
-    # wine can be quite spammy with log messages and they're generally uninteresting
-    WINEDEBUG="-all" \
-    # Use wine to run test executables
-    CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUNNER="wine" \
     # Note that we only disable unused-command-line-argument here since clang-cl
     # doesn't implement all of the options supported by cl, but the ones it doesn't
     # are _generally_ not interesting.
@@ -85,17 +72,15 @@ ENV CC_x86_64_pc_windows_msvc="clang-cl" \
 ENV CFLAGS_x86_64_pc_windows_msvc="$CL_FLAGS" \
     CXXFLAGS_x86_64_pc_windows_msvc="$CL_FLAGS"
 
-# Run wineboot just to setup the default WINEPREFIX so we don't do it every
-# container run
-RUN wine wineboot --init
+RUN rustup target add x86_64-pc-windows-msvc
 
-RUN cargo +nightly-2023-09-20 install defmt-print -Z build-std --target x86_64-pc-windows-msvc --locked
-RUN cargo +nightly-2023-09-20 install addr2line -Z build-std --target x86_64-pc-windows-msvc --features bin --git https://github.com/gimli-rs/addr2line --locked
+RUN cargo install defmt-print --target x86_64-pc-windows-msvc --locked
+RUN cargo install addr2line --target x86_64-pc-windows-msvc --features bin --git https://github.com/gimli-rs/addr2line --locked
 
 # Built the binaries once to prime the cargo registry cache
 WORKDIR /src
 COPY . /src
-RUN cargo build -p tricore-probe -Z build-std --target x86_64-pc-windows-msvc --features in_docker
+RUN cargo build -p tricore-probe --target x86_64-pc-windows-msvc --features in_docker
 
 
 
