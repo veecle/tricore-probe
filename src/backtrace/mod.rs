@@ -11,7 +11,6 @@ use std::{
     process::{Command, Stdio},
 };
 
-use crate::backtrace::pcxi::PCXIExt;
 use anyhow::Context;
 use colored::{Color, Colorize};
 use elf::{endian::AnyEndian, ElfBytes};
@@ -29,12 +28,8 @@ impl BackTraceInfo {
     }
 }
 
-pub trait ParseInfo {
-    fn addr2line(&self, elf_file: &Path) -> anyhow::Result<BackTraceInfo>;
-}
-
-impl ParseInfo for Stacktrace {
-    fn addr2line(&self, elf_file: &Path) -> anyhow::Result<BackTraceInfo> {
+impl Stacktrace {
+    pub(crate) fn addr2line(&self, elf_file: &Path) -> anyhow::Result<BackTraceInfo> {
         let mut registry = Addr2LineRegistry::new(elf_file);
         let trap_metadata = TrapMetadata::from_elf(elf_file).unwrap_or(TrapMetadata::empty());
 

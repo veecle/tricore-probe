@@ -1,7 +1,7 @@
 use bitfield_struct::bitfield;
 use rust_mcd::core::Core;
 
-use super::csa::{ContextLinkWord, ContextLinkWordExt, SavedContext};
+use super::csa::{ContextLinkWord, SavedContext};
 
 /// Models the PCXI register of the tricore architecture.
 #[bitfield(u32)]
@@ -32,17 +32,9 @@ impl PCXI {
             is_upper: self.is_upper(),
         })
     }
-}
-
-/// Extension trait for [PCXI].
-pub trait PCXIExt {
     /// Allows to iterate over all contexts in the CSA link chain using the
     /// specified core access.
-    fn walk_context<'a>(&self, core: &'a Core) -> ContextWalker<'a>;
-}
-
-impl PCXIExt for PCXI {
-    fn walk_context<'a>(&self, core: &'a Core) -> ContextWalker<'a> {
+    pub fn walk_context<'a>(&self, core: &'a Core) -> ContextWalker<'a> {
         ContextWalker { pcxi: *self, core }
     }
 }

@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
 
-use crate::chip::Device;
+use crate::chip_interface::DeviceSelection;
 use crate::elf::elf_to_hex;
 use anyhow::{bail, Context};
 use clap::Parser;
@@ -12,7 +12,6 @@ use std::str::FromStr;
 use tempfile::TempDir;
 
 pub mod backtrace;
-pub mod chip;
 mod chip_com;
 pub mod chip_interface;
 pub mod das;
@@ -83,7 +82,7 @@ fn main() -> anyhow::Result<()> {
             tricore_args.push("--list-devices".to_owned());
         }
 
-        if let Some(device) = args.device {
+        if let Some(device) = &args.device {
             tricore_args.push("--device".to_owned());
             tricore_args.push(device.clone());
         }
@@ -174,7 +173,6 @@ fn main() -> anyhow::Result<()> {
     #[cfg(not(target_os = "linux"))]
     {
         use crate::chip_com::ChipCommunication;
-        use backtrace::ParseInfo;
         use colored::Colorize;
         use defmt::DefmtDecoder;
 
@@ -243,7 +241,7 @@ fn existing_path(input_path: &str) -> anyhow::Result<PathBuf> {
     PathBuf::from_str(input_path).with_context(|| "Value is not a correct path")
 }
 
-fn pretty_print_devices<D: Device>(devices: &Vec<D>) {
+fn pretty_print_devices(devices: &Vec<DeviceSelection>) {
     if devices.is_empty() {
         println!("No devices available");
         return;

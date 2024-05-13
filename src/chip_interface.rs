@@ -1,4 +1,3 @@
-use crate::chip::Device;
 use rust_mcd::connection::ServerInfo;
 use std::fmt::Debug;
 
@@ -11,8 +10,8 @@ pub struct DeviceSelection {
     pub info: ServerInfo,
 }
 
-impl Device for DeviceSelection {
-    fn hardware_description(&self) -> &str {
+impl DeviceSelection {
+    pub(crate) fn hardware_description(&self) -> &str {
         self.info.acc_hw()
     }
 }
