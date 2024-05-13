@@ -1,15 +1,12 @@
 #![doc = include_str!("../README.md")]
 
 use crate::chip_communication::DeviceSelection;
-use crate::elf::elf_to_hex;
 use anyhow::{bail, Context};
 use clap::Parser;
 use env_logger::{Builder, Target};
 use log::LevelFilter;
-use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
-use tempfile::TempDir;
 
 pub mod backtrace;
 mod chip_communication;
@@ -62,9 +59,12 @@ fn main() -> anyhow::Result<()> {
 
     #[cfg(target_os = "linux")]
     {
+        use crate::elf::elf_to_hex;
         use std::collections::HashSet;
+        use std::fs;
         use std::process::Command;
         use std::process::Stdio;
+        use tempfile::TempDir;
 
         let mut docker_command = Command::new("docker");
         let command = docker_command
