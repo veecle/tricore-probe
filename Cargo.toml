@@ -10,7 +10,7 @@ description = "Tricore-probe: Run Rust effortlessly on Infineon AURIX™ TriCore
 
 [dependencies]
 anyhow = "1.0.69"
-bitfield-struct = "0.3.2"
+bitfield-struct = "0.6.1"
 byteorder = "1.5.0"
 clap = { version = "4.1.4", features = ["derive"] }
 colored = "2.0.0"
