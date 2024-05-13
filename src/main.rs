@@ -1,4 +1,5 @@
 #![doc = include_str!("../README.md")]
+#![cfg_attr(target_os = "linux", allow(dead_code))]
 
 use crate::chip_communication::DeviceSelection;
 use anyhow::{bail, Context};
