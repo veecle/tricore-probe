@@ -1,18 +1,22 @@
 use crate::backtrace::Stacktrace;
 use anyhow::{bail, Context};
-use rust_mcd::connection::Scan;
-use rust_mcd::reset::ResetClass;
+use rust_mcd::connection::{Scan, ServerInfo};
 use rust_mcd::system::System;
 use std::fs;
 use std::io::Write;
 use std::path::Path;
 use std::time::Duration;
 
-use crate::chip_interface::DeviceSelection;
 use crate::das;
 use crate::defmt::{decode_rtt, HaltReason};
 use crate::elf::elf_to_hex;
 use crate::flash::AurixFlasherUpload;
+
+#[derive(Debug, Clone, Copy)]
+pub struct DeviceSelection {
+    pub udas_port: usize,
+    pub info: ServerInfo,
+}
 
 pub struct ChipCommunication {
     device: Option<DeviceSelection>,
@@ -99,20 +103,6 @@ impl ChipCommunication {
             decoder,
         )?;
         anyhow::Ok(halt_reason)
-    }
-
-    pub fn reset(&mut self) -> anyhow::Result<()> {
-        rust_mcd::library::init();
-        let system = self.get_system()?;
-
-        let core = system.get_core(0)?;
-
-        let system_reset = ResetClass::construct_reset_class(&core, 0);
-        // Do we also need to reset the other cores?
-        core.reset(system_reset, true)?;
-        core.run()?;
-        drop(system);
-        anyhow::Ok(())
     }
 
     /// Returns the selected device.

@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
 
-use crate::chip_interface::DeviceSelection;
+use crate::chip_communication::DeviceSelection;
 use crate::elf::elf_to_hex;
 use anyhow::{bail, Context};
 use clap::Parser;
@@ -12,8 +12,7 @@ use std::str::FromStr;
 use tempfile::TempDir;
 
 pub mod backtrace;
-mod chip_com;
-pub mod chip_interface;
+mod chip_communication;
 pub mod das;
 pub mod defmt;
 pub mod elf;
@@ -172,7 +171,7 @@ fn main() -> anyhow::Result<()> {
     }
     #[cfg(not(target_os = "linux"))]
     {
-        use crate::chip_com::ChipCommunication;
+        use crate::chip_communication::ChipCommunication;
         use colored::Colorize;
         use defmt::DefmtDecoder;
 
@@ -190,7 +189,7 @@ fn main() -> anyhow::Result<()> {
             })?;
             let matched_devices: Vec<_> = scanned_devices
                 .iter()
-                .filter(|element| element.hardware_description().contains(&device))
+                .filter(|element| element.info.acc_hw().contains(&device))
                 .collect();
 
             match matched_devices.len() {
@@ -248,9 +247,6 @@ fn pretty_print_devices(devices: &Vec<DeviceSelection>) {
     }
     println!("Found {} devices:", devices.len());
     for (index, scanned_device) in devices.iter().enumerate() {
-        println!(
-            "Device {index}: {:?}",
-            scanned_device.hardware_description()
-        )
+        println!("Device {index}: {:?}", scanned_device.info.acc_hw())
     }
 }
