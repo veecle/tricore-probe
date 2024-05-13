@@ -10,19 +10,16 @@ description = "Tricore-probe: Run Rust effortlessly on Infineon AURIX™ TriCore
 
 [dependencies]
 anyhow = "1.0.69"
+bitfield-struct = "0.3.2"
+byteorder = "1.5.0"
 clap = { version = "4.1.4", features = ["derive"] }
+colored = "2.0.0"
 log = "0.4.17"
 tempfile = "3.3.0"
 env_logger = "0.10.0"
 elf = "0.7.1"
-colored = "2.0.0"
-cfg-if = "1.0.0"
-
-bitfield-struct = "0.3.2"
 
 rust-mcd = { path = "rust-mcd" }
-
-byteorder = "1.5.0"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 udev = {version = "0.8.0"}
