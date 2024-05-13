@@ -1,21 +1,21 @@
 //! Handles decoding of defmt byte streams, see [DefmtDecoder].
+use std::time::Duration;
 use std::{
     fs,
     io::Write,
     path::Path,
     process::{Child, Command, Stdio},
 };
-use std::time::Duration;
 
 use anyhow::{bail, Context};
 use byteorder::ReadBytesExt;
 
+use crate::backtrace::{Stacktrace, StacktraceExt};
 use elf::{endian::AnyEndian, ElfBytes};
 use rust_mcd::breakpoint::TriggerType;
 use rust_mcd::core::{Core, CoreState};
 use rust_mcd::error::EventError;
 use rust_mcd::reset::ResetClass;
-use crate::backtrace::{Stacktrace, StacktraceExt};
 
 /// This structure handles decoding a byte stream as defmt data.
 ///
@@ -103,7 +103,6 @@ impl Write for DefmtDecoder {
             .flush()
     }
 }
-
 
 /// Decode the rtt data from the first channel of the specified rtt block and
 /// write it to the supplied data sink.

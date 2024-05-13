@@ -11,8 +11,6 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use tempfile::TempDir;
 
-
-
 pub mod backtrace;
 pub mod chip;
 mod chip_com;
@@ -173,12 +171,13 @@ fn main() -> anyhow::Result<()> {
         // keep temp dir alive
         drop(temp_dir);
     }
-    #[cfg(not(target_os = "linux"))]{
+    #[cfg(not(target_os = "linux"))]
+    {
         use crate::chip_com::ChipCommunication;
         use backtrace::ParseInfo;
         use colored::Colorize;
         use defmt::DefmtDecoder;
-        
+
         let mut command_server = ChipCommunication::new()?;
 
         if args.list_devices {

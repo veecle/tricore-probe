@@ -34,7 +34,6 @@ impl PCXI {
     }
 }
 
-
 /// Extension trait for [PCXI].
 pub trait PCXIExt {
     /// Allows to iterate over all contexts in the CSA link chain using the

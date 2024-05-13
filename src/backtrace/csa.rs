@@ -2,10 +2,9 @@
 //!
 //! See also https://www.infineon.com/dgdl/tc1_6__architecture_vol1.pdf?fileId=db3a3043372d5cc801373b0f374d5d67#G8.6699641.
 
-
+use crate::backtrace::pcxi::PCXI;
 use anyhow::Context;
 use rust_mcd::core::Core;
-use crate::backtrace::pcxi::PCXI;
 
 /// Represents a link word that points to a CSA.
 ///

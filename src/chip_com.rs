@@ -1,12 +1,12 @@
-use std::fs;
-use std::io::Write;
-use std::path::Path;
-use std::time::Duration;
+use crate::backtrace::Stacktrace;
 use anyhow::{bail, Context};
 use rust_mcd::connection::Scan;
 use rust_mcd::reset::ResetClass;
 use rust_mcd::system::System;
-use crate::backtrace::Stacktrace;
+use std::fs;
+use std::io::Write;
+use std::path::Path;
+use std::time::Duration;
 
 use crate::chip_interface::DeviceSelection;
 use crate::das;
@@ -14,19 +14,21 @@ use crate::defmt::{decode_rtt, HaltReason};
 use crate::elf::elf_to_hex;
 use crate::flash::AurixFlasherUpload;
 
-pub struct ChipCommunication{
+pub struct ChipCommunication {
     device: Option<DeviceSelection>,
     scan_result: Option<Scan>,
 }
 
-impl ChipCommunication{
+impl ChipCommunication {
     pub(crate) fn list_devices(&mut self) -> anyhow::Result<Vec<DeviceSelection>> {
         let connection = self.attempt_connection()?;
-        anyhow::Ok(connection
-            .servers()
-            .enumerate()
-            .map(|(udas_port, info)| DeviceSelection { udas_port, info })
-            .collect())
+        anyhow::Ok(
+            connection
+                .servers()
+                .enumerate()
+                .map(|(udas_port, info)| DeviceSelection { udas_port, info })
+                .collect(),
+        )
     }
 
     pub(crate) fn connect(&mut self, device: Option<&DeviceSelection>) -> anyhow::Result<()> {
@@ -35,7 +37,7 @@ impl ChipCommunication{
         } else {
             log::debug!("Connecting to any available device");
         }
-        
+
         self.device = device.copied();
 
         anyhow::Ok(())
@@ -157,5 +159,4 @@ impl ChipCommunication{
     fn get_system(&mut self) -> anyhow::Result<System> {
         self.get_selected_device()?.info.connect()
     }
-    
 }

@@ -1,7 +1,6 @@
-use std::{fmt::Debug};
-use rust_mcd::connection::ServerInfo;
 use crate::chip::Device;
-
+use rust_mcd::connection::ServerInfo;
+use std::fmt::Debug;
 
 #[derive(clap::Args, Debug)]
 pub struct Config;

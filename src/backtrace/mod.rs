@@ -11,11 +11,11 @@ use std::{
     process::{Command, Stdio},
 };
 
+use crate::backtrace::pcxi::PCXIExt;
 use anyhow::Context;
 use colored::{Color, Colorize};
 use elf::{endian::AnyEndian, ElfBytes};
 use rust_mcd::core::Core;
-use crate::backtrace::pcxi::PCXIExt;
 
 pub struct BackTraceInfo {
     stack_frames: Vec<StackFrameInfo>,
@@ -269,7 +269,6 @@ impl TrapMetadata {
     }
 }
 
-
 /// Models a stacktrace, e.g. a snapshot of call frames at runtime.
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
@@ -278,7 +277,6 @@ pub struct Stacktrace {
     pub current_upper: UpperContext,
     pub stack_frames: Vec<SavedContext>,
 }
-
 
 /// This is an extension trait for [Core].
 pub trait StacktraceExt: Sized {
@@ -294,13 +292,15 @@ impl<'a> StacktraceExt for Core<'a> {
         let group = groups.get_group(0)?;
 
         let register = |name: &str| {
-            anyhow::Ok(group
-                .register(name)
-                .ok_or_else(|| {
-                    anyhow::Error::msg(format!("Could not find {name} register for core"))
-                })?
-                .read()
-                .with_context(|| format!("Cannot read {name} register"))?)
+            anyhow::Ok(
+                group
+                    .register(name)
+                    .ok_or_else(|| {
+                        anyhow::Error::msg(format!("Could not find {name} register for core"))
+                    })?
+                    .read()
+                    .with_context(|| format!("Cannot read {name} register"))?,
+            )
         };
 
         let current_upper = UpperContext {
