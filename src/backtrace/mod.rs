@@ -266,7 +266,6 @@ impl TrapMetadata {
 
 /// Models a stacktrace, e.g. a snapshot of call frames at runtime.
 #[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Stacktrace {
     pub current_pc: u32,
     pub current_upper: UpperContext,

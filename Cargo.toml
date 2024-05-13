@@ -10,7 +10,6 @@ description = "Tricore-probe: Run Rust effortlessly on Infineon AURIX™ TriCore
 
 [dependencies]
 anyhow = "1.0.69"
-serde = "1.0"
 clap = { version = "4.1.4", features = ["derive"] }
 log = "0.4.17"
 tempfile = "3.3.0"

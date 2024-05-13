@@ -59,7 +59,6 @@ impl ContextLinkWord {
 
 /// A saved context
 #[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum SavedContext {
     Upper(UpperContext),
     Lower(LowerContext),
@@ -89,7 +88,6 @@ impl SavedContext {
 }
 
 #[derive(Debug, Default, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[repr(C)]
 pub struct UpperContext {
     pub pcxi: PCXI,
@@ -111,7 +109,6 @@ pub struct UpperContext {
 }
 
 #[derive(Debug, Default)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[repr(C)]
 pub struct LowerContext {
     pub pcxi: PCXI,
