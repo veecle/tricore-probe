@@ -36,7 +36,7 @@ Currently only Windows and Linux are supported.
     Please make sure the `DAS_HOME` environment variable points to the DAS tool installation directory.
 2. [Infineon AURIX™ Flasher Software Tool](https://softwaretools.infineon.com/tools/com.ifx.tb.tool.aurixflashersoftwaretool)
    Please make sure the `AURIX_FLASHER_PATH` environment variable points to the AurixFlasher executable (`<your-path>\AURIXFlasher.exe`).
-3. [`defmt-print` CLI utility](https://crates.io/crates/defmt-print
+3. [`defmt-print` CLI utility](https://crates.io/crates/defmt-print)
 4. `objcopy` CLI utility (obtain e.g. as part of the [MinGW-w64](https://www.mingw-w64.org/) project)
 5. `addr2line` CLI utility (obtain e.g. as part of the [MinGW-w64](https://www.mingw-w64.org/) project)
 6. Rust toolchain
@@ -73,7 +73,7 @@ For more sample code refer to the Bluewind [bare-metal examples](https://github.
 
 ## Linux
 
-This setup is not officially supported by Infineon and thus might not work as expected.
+The Linux setup is not officially supported by Infineon and thus might not work as expected.
 Please report any bugs or issues you encounter with the Linux setup only to this repository, not to Infineon.
 
 ### Requirements
@@ -82,12 +82,13 @@ Please report any bugs or issues you encounter with the Linux setup only to this
 2. Place the [Infineon AURIX™ Flasher Software Tool](https://softwaretools.infineon.com/tools/com.ifx.tb.tool.aurixflashersoftwaretool) installer (`aurixflashersoftwaretool_1.0.10_Windows_x64.msi`) in [tricore-docker](tricore-docker).
 3. `objcopy` CLI utility
 4. Rust toolchain
+5. `libudev` library (`libudev-dev` on Ubuntu, `systemd-libs` on Fedora)
 
 ### Installation
 Build the docker container running the DAS tool, AurixFlasher and other utilities.
 
 **Note:**
-The `veecle/flash-tricore` container will contain an AurixFlasher and DAS installation in a wine environment.
+The `veecle/flash-tricore` container will contain an AurixFlasher and DAS installation in a Wine environment.
 To use this setup, make sure you checked the terms and conditions of these programs and accept them by setting the required build argument with `--build-arg=AGREE_INFINEON_TERMS=1` when building the docker image.
 
 ```shell
