@@ -1,5 +1,7 @@
 # Build this docker file with the parenting folder as the build context!
 
+# Use the official rust image with xwin (https://github.com/Jake-Shadle/xwin) as base.
+#
 FROM docker.io/library/rust:1.74.0-slim as builder-base
 
 ENV KEYRINGS /usr/local/share/keyrings
@@ -74,12 +76,17 @@ ENV CFLAGS_x86_64_pc_windows_msvc="$CL_FLAGS" \
 
 RUN rustup target add x86_64-pc-windows-msvc
 
+# Use cargo-chef to enable caching of dependencies.
 RUN cargo install cargo-chef --locked
 
 WORKDIR /cargo-bin
 
+# Install defmt-print and addr2line for Windows.
+# The executables are later copied to the runner image.
 RUN cargo install defmt-print --target x86_64-pc-windows-msvc --locked --root /cargo-bin
-RUN cargo install addr2line --target x86_64-pc-windows-msvc --features bin --git https://github.com/gimli-rs/addr2line --locked --root /cargo-bin
+# Addr2line binary has no crates.io release yet.
+# Until it has, we use git.
+RUN cargo install addr2line --target x86_64-pc-windows-msvc --features bin --git https://github.com/gimli-rs/addr2line --rev ade443f2ba6ce26a5dfddde1210f41aa46d96b92 --locked --root /cargo-bin
 
 WORKDIR /build
 
