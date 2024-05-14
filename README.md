@@ -23,7 +23,7 @@ target = "tc162-htc-none"
 
 Then you can call `cargo run` in your project root which will run the built .elf on your board via `tricore-probe`.
 
-# Platform support
+### Platform support
 Currently only Windows and Linux are supported.
 
 # Installation
