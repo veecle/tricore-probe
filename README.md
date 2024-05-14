@@ -78,8 +78,8 @@ Please report any bugs or issues you encounter with the Linux setup only to this
 
 ### Requirements
 
-1. Place the [Infineon DAS tool version 8.0.5](https://www.infineon.com/cms/en/product/promopages/das/) installer in [tricore-docker].
-2. Place the [Infineon AURIX™ Flasher Software Tool](https://softwaretools.infineon.com/tools/com.ifx.tb.tool.aurixflashersoftwaretool) installer in [tricore-docker].
+1. Place the [Infineon DAS tool version 8.0.5](https://www.infineon.com/cms/en/product/promopages/das/) installer (`DAS_V8_0_5_SETUP.exe`) in [tricore-docker](tricore-docker).
+2. Place the [Infineon AURIX™ Flasher Software Tool](https://softwaretools.infineon.com/tools/com.ifx.tb.tool.aurixflashersoftwaretool) installer (`aurixflashersoftwaretool_1.0.10_Windows_x64.msi`) in [tricore-docker](tricore-docker).
 3. `objcopy` CLI utility
 4. Rust toolchain
 
