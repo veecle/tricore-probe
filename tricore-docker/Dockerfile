@@ -2,7 +2,7 @@
 
 # Use the official rust image with xwin (https://github.com/Jake-Shadle/xwin) as base.
 #
-FROM docker.io/library/rust:1.74.0-slim as builder-base
+FROM docker.io/library/rust:1.74.0-slim-bookworm as builder-base
 
 ENV KEYRINGS /usr/local/share/keyrings
 
@@ -11,22 +11,21 @@ RUN set -eux; \
     apt-get update && apt-get install -y gpg curl; \
     # clang/lld/llvm
     curl --fail https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor > $KEYRINGS/llvm.gpg; \
-    echo "deb [signed-by=$KEYRINGS/llvm.gpg] http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-13 main" > /etc/apt/sources.list.d/llvm.list;
+    echo "deb [signed-by=$KEYRINGS/llvm.gpg] http://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-18 main" > /etc/apt/sources.list.d/llvm.list;
 
 RUN set -eux; \
-    dpkg --add-architecture i386; \
-    # Skipping all of the "recommended" cruft reduces total images size by ~300MiB
+    # Skipping all of the recommended reduces total images size by ~300MiB
     apt-get update && apt-get install --no-install-recommends -y \
-        clang-13 \
+        clang-18 \
         # llvm-ar
-        llvm-13 \
-        lld-13 \
+        llvm-18 \
+        lld-18 \
         # Unpack xwin
         tar; \
     # ensure that clang/clang++ are callable directly
-    ln -s clang-13 /usr/bin/clang && ln -s clang /usr/bin/clang++ && ln -s lld-13 /usr/bin/ld.lld; \
+    ln -s clang-18 /usr/bin/clang && ln -s clang /usr/bin/clang++ && ln -s lld-18 /usr/bin/ld.lld; \
     # We also need to setup symlinks ourselves for the MSVC shims because they aren't in the debian packages
-    ln -s clang-13 /usr/bin/clang-cl && ln -s llvm-ar-13 /usr/bin/llvm-lib && ln -s lld-link-13 /usr/bin/lld-link; \
+    ln -s clang-18 /usr/bin/clang-cl && ln -s llvm-ar-18 /usr/bin/llvm-lib && ln -s lld-link-18 /usr/bin/lld-link; \
     # Verify the symlinks are correct
     clang++ -v; \
     ld.lld -v; \
@@ -41,11 +40,8 @@ RUN set -eux; \
     apt-get remove -y --auto-remove; \
     rm -rf /var/lib/apt/lists/*;
 
-# Retrieve the std lib for the target
-RUN rustup toolchain install --force-non-host stable-x86_64-pc-windows-msvc
-
 RUN set -eux; \
-    xwin_version="0.2.10"; \
+    xwin_version="0.5.2"; \
     xwin_prefix="xwin-$xwin_version-x86_64-unknown-linux-musl"; \
     # Install xwin to cargo/bin via github release. Note you could also just use `cargo install xwin`.
     curl --fail -L https://github.com/Jake-Shadle/xwin/releases/download/$xwin_version/$xwin_prefix.tar.gz | tar -xzv -C /usr/local/cargo/bin --strip-components=1 $xwin_prefix/xwin; \
@@ -106,7 +102,7 @@ COPY . .
 RUN cargo build --release -p tricore-probe --target x86_64-pc-windows-msvc --features in_docker
 
 
-FROM ubuntu:focal AS runner
+FROM ubuntu:jammy AS runner
 
 # Silences interactive installers.
 ENV DEBIAN_FRONTEND=noninteractive
@@ -117,7 +113,7 @@ ENV TZ=Europe/Berlin
 RUN dpkg --add-architecture i386 && apt update && apt install -y wget
 RUN mkdir -pm755 /etc/apt/keyrings
 RUN wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
-RUN wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/focal/winehq-focal.sources
+RUN wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources
 RUN apt update
 # Virtual X server to make applications not crash without display.
 RUN apt install -y xvfb
