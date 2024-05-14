@@ -89,8 +89,8 @@ ENV CFLAGS_x86_64_pc_windows_msvc="$CL_FLAGS" \
 # container run
 RUN wine wineboot --init
 
-RUN cargo +nightly-2023-09-20 install defmt-print -Z build-std --target x86_64-pc-windows-msvc
-RUN cargo +nightly-2023-09-20 install addr2line -Z build-std --target x86_64-pc-windows-msvc --features bin --git https://github.com/gimli-rs/addr2line
+RUN cargo +nightly-2023-09-20 install defmt-print -Z build-std --target x86_64-pc-windows-msvc --locked
+RUN cargo +nightly-2023-09-20 install addr2line -Z build-std --target x86_64-pc-windows-msvc --features bin --git https://github.com/gimli-rs/addr2line --locked
 
 # Built the binaries once to prime the cargo registry cache
 WORKDIR /src
