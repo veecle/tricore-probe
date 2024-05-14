@@ -50,7 +50,6 @@ them for this setup by setting the required build argument with `--build-arg=AGR
 when building the docker image.
 
 ## Install the correct version of tricore-probe
-Install tricore-probe with default features disabled and the `docker` feature enabled
-to use the docker container as a backend instead of the native windows implementation.
+Install tricore-probe to use the docker container as a backend instead of the native windows implementation.
 
 Ét voila! If everything worked, tricore-probe now runs on your linux machine.
