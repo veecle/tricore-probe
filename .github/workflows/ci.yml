@@ -17,7 +17,6 @@ jobs:
         with:
           cache-on-failure: "true"
       - run: cargo clippy --workspace --target x86_64-pc-windows-msvc
-      - run: cargo clippy --workspace --target x86_64-pc-windows-msvc --no-default-features --features windows
       - run: cargo fmt --check --all
   clippy-linux:
     name: cargo clippy
@@ -34,5 +33,5 @@ jobs:
         with:
           cache-on-failure: "true"
       - run: sudo apt install -y libudev-dev
-      - run: cargo clippy --workspace --no-default-features --features docker
+      - run: cargo clippy --workspace --features in_docker
       - run: cargo fmt --check --all

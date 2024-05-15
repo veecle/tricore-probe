@@ -1,32 +1,20 @@
 # Running DAS tools on linux
 
 DAS is only available for windows - unless you simulate a Windows environment
-in a docker container, provide a patched version of the FTD2XX library and let
-it communicate with an FTDI server on your host over OS pipes.
+in a docker container and provide a patched version of the FTD2XX library.
 
-**This code needs a cleanup** - we recommend you get familiar with the windows setup first
-before you enter this flimsy, undocumented region of prototyping.
-
-# I am brave, let me!
-You consciously or accidentally decided to keep going, so how to get started?
-Note: This setup is most likely not ideal, but the first working result after a 
-long path of failed attempts.
+This setup is not officially supported by Infineon and thus might not work as expected.
+Please report any bugs or issues you encounter only to this repository, not to Infineon.
 
 ## Requirements
-`libudev` needs to be installed for linux systems.
-
-Apt:
-```bash
-sudo apt-get install libudev-dev
-```
-Dnf:
-```bash
-sudo dnf install systemd-devel
-```
+1. `libudev` library (`libudev-dev` for apt, `systemd-devel` for dnf).
+2. `objcopy` 
+3. [Infineon DAS tool version 8.0.5 installer](https://www.infineon.com/cms/en/product/promopages/das/)
+4. [Infineon AURIX™ Flasher Software Tool installer](https://softwaretools.infineon.com/tools/com.ifx.tb.tool.aurixflashersoftwaretool)
 
 
 ## Prepare for building the artifacts
-You need to build one artifact for windows, specifically for the `x86_64-pc-windows-msvc`
+You need to build artifacts for windows, specifically for the `x86_64-pc-windows-msvc`
 target. This trivially cannot be done on linux, the desired option would be to 
 use the [`cross`](https://github.com/cross-rs/cross) project but I was unable to get it running. You thus want to build
 a docker container using the `xwin` project (to provide required header files) 
@@ -40,11 +28,11 @@ Note that this uses the parenting folder as the build context to prime the cargo
 registry caches inside the container.
 
 ## Build artifact for the simulated Windows environment
-You need to build one artifact for the simulated Windows environment. The commands
+You need to build artifacts for the simulated Windows environment. The commands
 are already prepared in `build_artifacts.sh`
 
 ## Build the simulated Windows environment
-This folder should now contain a folder `artifacts` with one file: `win-daemon.exe`.
+This folder should now contain a folder `artifacts` with three file: `win-daemon.exe`, `addr2line` and `defmt-print`.
 The simulated Windows environment requires the installers for the DAS server and AurixFlasher tool.
 Specifically, [`aurixflashersoftwaretool_1.0.10_Windows_x64.msi`](https://softwaretools.infineon.com/tools/com.ifx.tb.tool.aurixflashersoftwaretool) and [`DAS_V8_0_5_SETUP.exe`](https://www.infineon.com/cms/en/product/promopages/das/) need to be places into the `tricore-docker` directory.
 
@@ -62,7 +50,6 @@ them for this setup by setting the required build argument with `--build-arg=AGR
 when building the docker image.
 
 ## Install the correct version of tricore-probe
-Install tricore-probe with default features disabled and the `docker` feature enabled
-to use the docker container as a backend instead of the native windows implementation.
+Install tricore-probe to use the docker container as a backend instead of the native windows implementation.
 
 Ét voila! If everything worked, tricore-probe now runs on your linux machine.

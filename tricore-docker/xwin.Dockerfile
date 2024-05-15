@@ -1,6 +1,6 @@
 # Build this docker file with the parenting folder as the build context!
 # We'll just use the official Rust image
-FROM docker.io/library/rust:1.67.0-slim-bullseye
+FROM docker.io/library/rust:1.78.0-slim-bullseye
 
 ENV KEYRINGS /usr/local/share/keyrings
 
@@ -46,6 +46,7 @@ RUN set -eux; \
 
 # Retrieve the std lib for the target
 RUN rustup toolchain install --force-non-host nightly-x86_64-pc-windows-msvc
+RUN rustup toolchain install --force-non-host stable-x86_64-pc-windows-msvc
 
 RUN set -eux; \
     xwin_version="0.2.10"; \
@@ -88,9 +89,14 @@ ENV CFLAGS_x86_64_pc_windows_msvc="$CL_FLAGS" \
 # container run
 RUN wine wineboot --init
 
+RUN cargo +nightly-2023-09-20 install defmt-print -Z build-std --target x86_64-pc-windows-msvc --locked
+RUN cargo +nightly-2023-09-20 install addr2line -Z build-std --target x86_64-pc-windows-msvc --features bin --git https://github.com/gimli-rs/addr2line --locked
+
 # Built the binaries once to prime the cargo registry cache
 WORKDIR /src
 COPY . /src
-RUN cargo build --manifest-path tricore-docker/win-daemon/Cargo.toml -Z build-std --target x86_64-pc-windows-msvc
+RUN cargo build -p tricore-probe -Z build-std --target x86_64-pc-windows-msvc --features in_docker
+
+
 
 RUN rm -r *

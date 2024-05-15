@@ -1,7 +1,10 @@
 //! Defines structure for CSA's.
 //!
 //! See also https://www.infineon.com/dgdl/tc1_6__architecture_vol1.pdf?fileId=db3a3043372d5cc801373b0f374d5d67#G8.6699641.
-use super::pcxi::PCXI;
+
+use crate::backtrace::pcxi::PCXI;
+use anyhow::Context;
+use rust_mcd::core::Core;
 
 /// Represents a link word that points to a CSA.
 ///
@@ -18,11 +21,44 @@ impl ContextLinkWord {
     pub fn get_context_address(&self) -> u32 {
         ((self.segment_address as u32) << 28) + ((self.context_offset as u32) << 6)
     }
+
+    pub(crate) fn load(&self, core: &Core) -> anyhow::Result<SavedContext> {
+        log::trace!(
+            "Loading stored context from {:#8X}",
+            self.get_context_address()
+        );
+        if self.is_upper {
+            let mut upper = UpperContext::default();
+            let bytes = core
+                .read_bytes(
+                    self.get_context_address() as u64,
+                    core::mem::size_of::<UpperContext>(),
+                )
+                .with_context(|| "Cannot read saved context from memory")?;
+            assert_eq!(bytes.len(), core::mem::size_of::<UpperContext>());
+            unsafe {
+                core::ptr::copy(bytes.as_ptr() as *const UpperContext, &mut upper, 1);
+            }
+            Ok(SavedContext::Upper(upper))
+        } else {
+            let mut lower = LowerContext::default();
+            let bytes = core
+                .read_bytes(
+                    self.get_context_address() as u64,
+                    core::mem::size_of::<LowerContext>(),
+                )
+                .with_context(|| "Cannot read saved context from memory")?;
+            assert_eq!(bytes.len(), core::mem::size_of::<LowerContext>());
+            unsafe {
+                core::ptr::copy(bytes.as_ptr() as *const LowerContext, &mut lower, 1);
+            }
+            Ok(SavedContext::Lower(lower))
+        }
+    }
 }
 
 /// A saved context
 #[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum SavedContext {
     Upper(UpperContext),
     Lower(LowerContext),
@@ -52,7 +88,6 @@ impl SavedContext {
 }
 
 #[derive(Debug, Default, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[repr(C)]
 pub struct UpperContext {
     pub pcxi: PCXI,
@@ -74,7 +109,6 @@ pub struct UpperContext {
 }
 
 #[derive(Debug, Default)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[repr(C)]
 pub struct LowerContext {
     pub pcxi: PCXI,

@@ -1,24 +1,16 @@
-#![feature(type_alias_impl_trait)]
+use crate::backtrace::Stacktrace;
+use anyhow::{bail, Context};
+use rust_mcd::connection::{Scan, ServerInfo};
+use rust_mcd::system::System;
+use std::fs;
+use std::io::Write;
+use std::path::Path;
+use std::time::Duration;
 
-use std::{io::Write, time::Duration};
-
-use anyhow::{bail, Context, Ok};
-use defmt::{decode_rtt, HaltReason};
-use flash::AurixFlasherUpload;
-use rust_mcd::{
-    connection::{Scan, ServerInfo},
-    reset::ResetClass,
-    system::System,
-};
-use tricore_common::{backtrace::Stacktrace, Chip};
-
-mod backtrace;
-pub mod das;
-pub mod defmt;
-pub mod flash;
-
-#[derive(clap::Args, Debug)]
-pub struct Config;
+use crate::das;
+use crate::defmt::{decode_rtt, HaltReason};
+use crate::elf::elf_to_hex;
+use crate::flash::AurixFlasherUpload;
 
 #[derive(Debug, Clone, Copy)]
 pub struct DeviceSelection {
@@ -26,38 +18,36 @@ pub struct DeviceSelection {
     pub info: ServerInfo,
 }
 
-impl tricore_common::Device for DeviceSelection {
-    fn hardware_description(&self) -> &str {
-        self.info.acc_hw()
-    }
-}
-
-pub struct ChipInterface {
+pub struct ChipCommunication {
     device: Option<DeviceSelection>,
     scan_result: Option<Scan>,
 }
 
-impl Chip for ChipInterface {
-    type Config = Config;
-
-    type Device = DeviceSelection;
-
-    fn list_devices(&mut self) -> anyhow::Result<Vec<Self::Device>> {
+impl ChipCommunication {
+    pub(crate) fn list_devices(&mut self) -> anyhow::Result<Vec<DeviceSelection>> {
         let connection = self.attempt_connection()?;
-        Ok(connection
-            .servers()
-            .enumerate()
-            .map(|(udas_port, info)| DeviceSelection { udas_port, info })
-            .collect())
+        anyhow::Ok(
+            connection
+                .servers()
+                .enumerate()
+                .map(|(udas_port, info)| DeviceSelection { udas_port, info })
+                .collect(),
+        )
     }
 
-    fn connect(&mut self, device: Option<&Self::Device>) -> anyhow::Result<()> {
+    pub(crate) fn connect(&mut self, device: Option<&DeviceSelection>) -> anyhow::Result<()> {
+        if let Some(device) = device {
+            log::debug!("Connecting to device {device:?}");
+        } else {
+            log::debug!("Connecting to any available device");
+        }
+
         self.device = device.copied();
 
-        Ok(())
+        anyhow::Ok(())
     }
 
-    fn new(_config: Self::Config) -> anyhow::Result<Self> {
+    pub(crate) fn new() -> anyhow::Result<Self> {
         log::debug!("Spawning DAS console.");
         std::thread::spawn(|| das::run_console().expect("Background process crashed."));
         // We need to wait a bit so that DAS is booted up correctly and sees
@@ -65,7 +55,7 @@ impl Chip for ChipInterface {
         std::thread::sleep(Duration::from_millis(800));
 
         rust_mcd::library::init();
-        Ok(ChipInterface {
+        anyhow::Ok(Self {
             device: None,
             scan_result: None,
         })
@@ -81,10 +71,20 @@ impl Chip for ChipInterface {
 
         upload.wait();
 
-        Ok(())
+        anyhow::Ok(())
     }
 
-    fn read_rtt<W: Write>(
+    /// Behaves like [Chip::flash_hex], but the binary is specified as a path to an elf
+    /// file instead of provided as Intel hex in memory.
+    pub fn flash_elf(&mut self, elf_file: &Path) -> anyhow::Result<()> {
+        log::info!("Converting elf {} to hex file", elf_file.display());
+        let elf_data = fs::read(elf_file).context("Cannot load elf file")?;
+        let ihex = elf_to_hex(&elf_data).context("Cannot convert elf to hex file")?;
+        log::info!("Flashing hex file");
+        self.flash_hex(ihex)
+    }
+
+    pub(crate) fn read_rtt<W: Write>(
         &mut self,
         rtt_control_block_address: u64,
         decoder: W,
@@ -102,23 +102,7 @@ impl Chip for ChipInterface {
             rtt_control_block_address,
             decoder,
         )?;
-        Ok(halt_reason)
-    }
-}
-
-impl ChipInterface {
-    pub fn reset(&mut self) -> anyhow::Result<()> {
-        rust_mcd::library::init();
-        let system = self.get_system()?;
-
-        let core = system.get_core(0)?;
-
-        let system_reset = ResetClass::construct_reset_class(&core, 0);
-        // Do we also need to reset the other cores?
-        core.reset(system_reset, true)?;
-        core.run()?;
-        drop(system);
-        Ok(())
+        anyhow::Ok(halt_reason)
     }
 
     /// Returns the selected device.
@@ -151,7 +135,7 @@ impl ChipInterface {
             self.device = Some(device);
         }
 
-        Ok(self.device.as_ref().unwrap())
+        anyhow::Ok(self.device.as_ref().unwrap())
     }
 
     fn attempt_connection(&mut self) -> anyhow::Result<&Scan> {
@@ -159,7 +143,7 @@ impl ChipInterface {
             self.scan_result = Some(Scan::new()?);
         }
 
-        Ok(self.scan_result.as_ref().unwrap())
+        anyhow::Ok(self.scan_result.as_ref().unwrap())
     }
 
     fn get_system(&mut self) -> anyhow::Result<System> {

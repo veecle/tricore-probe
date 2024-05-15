@@ -1,3 +1,10 @@
+//! This module defines a stacktrace for the tricore architecture that is obtained
+//! by traversing the CSA link chain.
+use self::csa::{SavedContext, UpperContext};
+
+pub mod csa;
+pub mod pcxi;
+
 use std::{
     collections::HashMap,
     path::Path,
@@ -7,7 +14,7 @@ use std::{
 use anyhow::Context;
 use colored::{Color, Colorize};
 use elf::{endian::AnyEndian, ElfBytes};
-use tricore_common::backtrace::{csa::SavedContext, Stacktrace};
+use rust_mcd::core::Core;
 
 pub struct BackTraceInfo {
     stack_frames: Vec<StackFrameInfo>,
@@ -21,12 +28,8 @@ impl BackTraceInfo {
     }
 }
 
-pub trait ParseInfo {
-    fn addr2line(&self, elf_file: &Path) -> anyhow::Result<BackTraceInfo>;
-}
-
-impl ParseInfo for Stacktrace {
-    fn addr2line(&self, elf_file: &Path) -> anyhow::Result<BackTraceInfo> {
+impl Stacktrace {
+    pub(crate) fn addr2line(&self, elf_file: &Path) -> anyhow::Result<BackTraceInfo> {
         let mut registry = Addr2LineRegistry::new(elf_file);
         let trap_metadata = TrapMetadata::from_elf(elf_file).unwrap_or(TrapMetadata::empty());
 
@@ -258,5 +261,69 @@ impl TrapMetadata {
         let class = offset_from_start / 32;
 
         Some(class as u8)
+    }
+}
+
+/// Models a stacktrace, e.g. a snapshot of call frames at runtime.
+#[derive(Debug)]
+pub struct Stacktrace {
+    pub current_pc: u32,
+    pub current_upper: UpperContext,
+    pub stack_frames: Vec<SavedContext>,
+}
+
+/// This is an extension trait for [Core].
+pub trait StacktraceExt: Sized {
+    /// Reads the stacktrace from the given core.
+    ///
+    /// This function is available on the [Core] type.
+    fn read_current(&self) -> anyhow::Result<Stacktrace>;
+}
+
+impl<'a> StacktraceExt for Core<'a> {
+    fn read_current(&self) -> anyhow::Result<Stacktrace> {
+        let groups = self.register_groups()?;
+        let group = groups.get_group(0)?;
+
+        let register = |name: &str| {
+            anyhow::Ok(
+                group
+                    .register(name)
+                    .ok_or_else(|| {
+                        anyhow::Error::msg(format!("Could not find {name} register for core"))
+                    })?
+                    .read()
+                    .with_context(|| format!("Cannot read {name} register"))?,
+            )
+        };
+
+        let current_upper = UpperContext {
+            pcxi: register("PCXI")?.into(),
+            psw: register("PSW")?,
+            a10: register("A10")?,
+            a11: register("A11")?,
+            d8: register("D8")?,
+            d9: register("D9")?,
+            d10: register("D10")?,
+            d11: register("D11")?,
+            a12: register("A12")?,
+            a13: register("A13")?,
+            a14: register("A14")?,
+            a15: register("A15")?,
+            d12: register("D12")?,
+            d13: register("D13")?,
+            d14: register("D14")?,
+            d15: register("D15")?,
+        };
+
+        let current_pc = register("PC")?;
+
+        let stack_frames = current_upper.pcxi.walk_context(self).collect();
+
+        anyhow::Ok(Stacktrace {
+            stack_frames,
+            current_pc,
+            current_upper,
+        })
     }
 }
