@@ -14,7 +14,7 @@ macro_rules! set_env_if_not_defined {
 
 fn main() {
     set_env_if_not_defined!(
-        "MEMTOOL_PATH",
-        "C:\\Program Files\\Infineon\\Memtool 2021\\IMTMemtool.exe"
+        "AURIX_FLASHER_PATH",
+        "C:\\Infineon\\AURIXFlasherSoftwareTool\\AURIXFlasher.exe"
     );
 }

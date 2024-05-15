@@ -13,7 +13,9 @@ log = "0.4.17"
 ciborium = "0.2.0"
 clap = { version = "4.1.13", features = ["derive"]}
 tempfile = "3.4.0"
-ftd-api = { path = "ftd-api" }
 rpc-api = { path = "rpc-api" }
-native = { path = "native" }
 tricore-common = { path = "../tricore-common" }
+
+# Only depend on udev on linux, as it's not available on other platforms.
+[target.'cfg(target_os = "linux")'.dependencies]
+udev = {version = "0.8.0"}

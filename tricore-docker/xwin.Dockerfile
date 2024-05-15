@@ -91,7 +91,6 @@ RUN wine wineboot --init
 # Built the binaries once to prime the cargo registry cache
 WORKDIR /src
 COPY . /src
-RUN cargo build --manifest-path tricore-docker/win-ftd2xx-dll/Cargo.toml -Z build-std --target x86_64-pc-windows-msvc
 RUN cargo build --manifest-path tricore-docker/win-daemon/Cargo.toml -Z build-std --target x86_64-pc-windows-msvc
 
 RUN rm -r *

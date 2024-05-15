@@ -6,7 +6,7 @@ impl DynamicMCDxDAS {
     /// Behaves like [DynamicMCDxDAS::mcd_qry_servers_f], with num_servers set to 0.
     pub fn query_server_count(&self, host: &std::ffi::CStr) -> Result<u32, McdReturnError> {
         let mut num_open_servers = 0u32;
-
+        log::debug!("Before MCF mcd_qry_servers_f");
         McdReturnError::from_library_call(unsafe {
             self.mcd_qry_servers_f(
                 host.as_ptr(),
@@ -16,7 +16,7 @@ impl DynamicMCDxDAS {
                 core::ptr::null_mut(),
             )
         })?;
-
+        log::debug!("After MCF mcd_qry_servers_f");
         Ok(num_open_servers)
     }
 

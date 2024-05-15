@@ -6,13 +6,12 @@ use clap::Args;
 use rpc_api::win_daemon::{Commands, DeviceInfo, Response, WriteHex};
 use tricore_common::{backtrace::Stacktrace, Chip};
 
-use self::{daemon::VirtualizedDaemon, ftdi::FTDIClient, pipe::DuplexPipeConnection};
+use self::{daemon::VirtualizedDaemon, pipe::DuplexPipeConnection};
 
 pub type Config = DockerConfig;
 
 mod builder;
 mod daemon;
-mod ftdi;
 mod logger;
 mod pipe;
 
@@ -25,7 +24,6 @@ pub struct DockerConfig {
 pub struct ChipInterface {
     server: Arc<DuplexPipeConnection>,
     _docker: VirtualizedDaemon,
-    _ftdi: FTDIClient,
 }
 
 impl Chip for ChipInterface {
@@ -51,12 +49,8 @@ impl Chip for ChipInterface {
 
     fn new(enable_gui: Config) -> anyhow::Result<Self> {
         let rpc_channel_ftdi = Arc::new(DuplexPipeConnection::new());
-        let pipe_for_driver = rpc_channel_ftdi.clone();
 
         let rpc_channel_commands = Arc::new(DuplexPipeConnection::new());
-
-        log::trace!("Spawning FTDI client for {:?}", pipe_for_driver);
-        let ftdi = FTDIClient::spawn(pipe_for_driver);
 
         log::trace!("Spawning virtualized docker daemon");
         let _docker = VirtualizedDaemon::spawn(
@@ -67,17 +61,13 @@ impl Chip for ChipInterface {
 
         Ok(ChipInterface {
             server: rpc_channel_commands,
-            _ftdi: ftdi,
             _docker,
         })
     }
 
-    fn flash_hex(&mut self, ihex: String, halt_memtool: bool) -> anyhow::Result<()> {
+    fn flash_hex(&mut self, ihex: String) -> anyhow::Result<()> {
         log::trace!("Sending flash command to daemon");
-        let request = Commands::WriteHex(WriteHex {
-            elf_data: ihex,
-            halt_memtool,
-        });
+        let request = Commands::WriteHex(WriteHex { elf_data: ihex });
 
         let response = self.send_request(request)?;
 

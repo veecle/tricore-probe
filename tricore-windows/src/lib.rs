@@ -4,7 +4,7 @@ use std::{io::Write, time::Duration};
 
 use anyhow::{bail, Context, Ok};
 use defmt::{decode_rtt, HaltReason};
-use flash::MemtoolUpload;
+use flash::AurixFlasherUpload;
 use rust_mcd::{
     connection::{Scan, ServerInfo},
     reset::ResetClass,
@@ -58,13 +58,12 @@ impl Chip for ChipInterface {
     }
 
     fn new(_config: Self::Config) -> anyhow::Result<Self> {
-        #[cfg(not(feature = "dasv8"))]
-        {
-            std::thread::spawn(|| das::run_console().expect("Background process crashed"));
-            // We need to wait a bit so that DAS is booted up correctly and sees
-            // all connected chips
-            std::thread::sleep(Duration::from_millis(800));
-        }
+        log::debug!("Spawning DAS console.");
+        std::thread::spawn(|| das::run_console().expect("Background process crashed."));
+        // We need to wait a bit so that DAS is booted up correctly and sees
+        // all connected chips.
+        std::thread::sleep(Duration::from_millis(800));
+
         rust_mcd::library::init();
         Ok(ChipInterface {
             device: None,
@@ -72,13 +71,13 @@ impl Chip for ChipInterface {
         })
     }
 
-    fn flash_hex(&mut self, ihex: String, halt_memtool: bool) -> anyhow::Result<()> {
+    fn flash_hex(&mut self, ihex: String) -> anyhow::Result<()> {
         let device = self
             .get_selected_device()
-            .context("Failed to identify target device for memtool")?;
+            .context("Failed to identify target device for AurixFlasher.")?;
 
-        let mut upload = MemtoolUpload::start(ihex, halt_memtool, device.udas_port)
-            .context("Failed to run memtool")?;
+        let mut upload = AurixFlasherUpload::start(ihex, device.udas_port)
+            .context("Failed to run AurixFlasher.")?;
 
         upload.wait();
 

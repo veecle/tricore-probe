@@ -1,7 +1,7 @@
 name: Lints and formatting
 on: [push, pull_request]
 jobs:
-  clippy:
+  clippy-windows:
     name: cargo clippy
     runs-on: windows-latest
     env:
@@ -18,5 +18,21 @@ jobs:
           cache-on-failure: "true"
       - run: cargo clippy --workspace --target x86_64-pc-windows-msvc
       - run: cargo clippy --workspace --target x86_64-pc-windows-msvc --no-default-features --features windows
-      - run: cargo clippy --workspace --target x86_64-pc-windows-msvc --no-default-features --features docker
+      - run: cargo fmt --check --all
+  clippy-linux:
+    name: cargo clippy
+    runs-on: ubuntu-latest
+    env:
+      RUSTFLAGS: -D warnings
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2023-09-20
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: "true"
+      - run: sudo apt install -y libudev-dev
+      - run: cargo clippy --workspace --no-default-features --features docker
       - run: cargo fmt --check --all

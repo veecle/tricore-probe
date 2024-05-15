@@ -1,6 +1,6 @@
 [package]
 name = "tricore-probe"
-version = "0.1.0"
+version = "0.2.0"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true
@@ -30,9 +30,6 @@ docker = ["dep:tricore-docker"]
 
 default = ["windows"]
 
-# Enable for using DAS version 8 over version 7
-dasv8 = ["tricore-windows?/dasv8"]
-
 [workspace]
 members = [
     "rust-mcd",
@@ -40,11 +37,7 @@ members = [
     "tricore-common",
     "tricore-docker",
     "tricore-docker/win-daemon",
-    "tricore-docker/win-ftd2xx-dll",
     "tricore-docker/rpc-api",
-    "tricore-docker/native",
-    "tricore-docker/ftd-api",
-    "tricore-docker/dll-export",
 ]
 
 [workspace.package]

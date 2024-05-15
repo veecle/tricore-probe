@@ -5,36 +5,39 @@ use std::{
     process::{Command, Stdio},
 };
 
-use anyhow::{bail, Context};
+use anyhow::Context;
 
 /// Spawns a DAS instance.
 pub fn run_console() -> anyhow::Result<()> {
     let das_home = PathBuf::from(
-        std::env::var("DAS_HOME").context("DAS_HOME not defined, is DAS installed?")?,
+        std::env::var("DAS_HOME")
+            .context("DAS_HOME not defined, is DAS installed and environment variable set?")?,
     );
 
-    #[cfg(not(feature = "dasv8"))]
-    {
-        log::trace!("Starting dashpas");
-        let mut process = Command::new(das_home.join("dashpas/das_dashpas.exe"));
-        let _started_dashpas = process.spawn().context("Failed to spawn das_dashpas")?;
-    }
+    log::trace!("Starting tas_server_console.");
 
-    log::trace!("Starting UDAS_Console");
+    let mut udas_console = Command::new(das_home.join("servers/tas_server_console.exe"));
+    // Disable logging for the tas_server_console.
+    udas_console
+        .arg("0")
+        .stderr(Stdio::null())
+        .stdout(Stdio::null());
 
-    let mut udas_console = Command::new(das_home.join("servers/udas/UDAS_Console.exe"));
-    let udas_console = udas_console.stderr(Stdio::inherit()).stdout(Stdio::null());
     let mut udas_console = udas_console
         .spawn()
-        .context("Failed to spawn UDAS_Console")?;
+        .context("Failed to spawn tas_server_console")?;
 
-    log::info!("DAS server started");
+    log::info!("DAS server started.");
     let result = udas_console
         .wait()
-        .context("UDAS_Console.exe process aborted")?;
+        .context("tas_server_console.exe process aborted")?;
 
     if !result.success() {
-        bail!("Das server exited unsuccessfully: {result:?}")
+        // If a DAS/TAS server is already running, duplicates will terminate after 5 seconds.
+        log::warn!(
+            "tas_server_console exited unsuccessfully: {result:?} \
+        This is normal and can be ignored if a TAS server is already running on the system."
+        );
     }
 
     Ok(())

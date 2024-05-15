@@ -3,3 +3,6 @@ tricore-docker/docker-build-daemon
 tricore-docker/artifacts
 target
 Cargo.lock
+.idea
+tricore-docker/DAS_V8_0_5_SETUP.exe
+tricore-docker/aurixflashersoftwaretool_1.0.10_Windows_x64.msi

@@ -27,6 +27,8 @@ pub enum McdReturnError {
 impl McdReturnError {
     /// Parses the return code from an MCD API call into a [Result].
     pub fn from_library_call(code: mcd_return_et) -> Result<(), Self> {
+        log::debug!("Before from_library_call code print");
+        log::debug!("code: {}", code);
         match code {
             _ if code == MCD_RET_ACT_NONE as u32 => Ok(()),
             _ if code == MCD_RET_ACT_AGAIN as u32 => Err(Self::TryAgain),

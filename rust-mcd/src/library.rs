@@ -30,5 +30,6 @@ pub fn init() {
         date: [0; 16],
     };
     let result = unsafe { MCD_LIB.mcd_initialize_f(&version_requirement, &mut output) };
+    log::debug!("Initializing MCD library output: {:?}", output);
     assert_eq!(result, 0);
 }
