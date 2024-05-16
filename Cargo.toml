@@ -7,16 +7,17 @@ homepage.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "Tricore-probe: Run Rust effortlessly on Infineon AURIX™ TriCore™ chips."
+rust-version = "1.74.0"
 
 [dependencies]
 anyhow = "1.0.69"
-bitfield-struct = "0.3.2"
+bitfield-struct = "0.6.1"
 byteorder = "1.5.0"
 clap = { version = "4.1.4", features = ["derive"] }
 colored = "2.0.0"
 log = "0.4.17"
 tempfile = "3.3.0"
-env_logger = "0.10.0"
+env_logger = "0.11.3"
 elf = "0.7.1"
 
 rust-mcd = { path = "rust-mcd" }

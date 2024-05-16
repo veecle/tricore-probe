@@ -8,7 +8,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-libloading = "0.7.4"
+libloading = "0.8.3"
 lazy_static = "1.4.0"
 byteorder = "1.4.3"
 log = "0.4.17"

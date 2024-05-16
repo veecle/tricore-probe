@@ -241,7 +241,7 @@ fn existing_path(input_path: &str) -> anyhow::Result<PathBuf> {
     PathBuf::from_str(input_path).with_context(|| "Value is not a correct path")
 }
 
-fn pretty_print_devices(devices: &Vec<DeviceSelection>) {
+fn pretty_print_devices(devices: &[DeviceSelection]) {
     if devices.is_empty() {
         println!("No devices available");
         return;

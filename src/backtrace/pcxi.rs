@@ -5,7 +5,6 @@ use super::csa::{ContextLinkWord, SavedContext};
 
 /// Models the PCXI register of the tricore architecture.
 #[bitfield(u32)]
-#[derive(Default)]
 pub struct PCXI {
     pub previous_context_pointer: u16,
     #[bits(4)]
