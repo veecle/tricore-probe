@@ -5,24 +5,6 @@ on Tricore chips. It uses publicly available Infineon tools to interface with th
 chips debug controller. As its name suggests, it is inspired by [`probe-run`](https://crates.io/crates/probe-run) and depends 
 on the [`defmt`](https://defmt.ferrous-systems.com/) framework to integrate seamlessly just as `probe-run` does.
 
-This program can be configured as a [runner](https://doc.rust-lang.org/cargo/reference/config.html#targettriplerunner). 
-Check [`main.rs`](src/main.rs) for additional configuration options.
-
-A simple runner config for a TC375 lite kit could look like this:
-
-```toml
-[target.tc162-htc-none]
-runner = "tricore-probe"
-# Default dwarf version of v0.2.0 HighTec compiler is version 2 which is
-# incompatible with defmt location information
-rustflags = ["-Z", "dwarf-version=4"]
-
-[build]
-target = "tc162-htc-none"
-```
-
-Then you can call `cargo run` in your project root which will run the built .elf on your board via `tricore-probe`.
-
 ### Platform support
 Currently only Windows and Linux are supported.
 
@@ -47,29 +29,6 @@ Install `tricore-probe`:
 ```shell
 cargo install tricore-probe --git https://github.com/veecle/tricore-probe --version 0.2.0
 ```
-# Quickstart
-
-```
-> git clone https://github.com/veecle/tricore-probe.git
-> cd tricore-probe
-> cargo build
-> .\target\debug\tricore-probe.exe <your-executable>.elf --list-devices
-Found 1 devices:
-Device 0: "DAS JDS AURIX LITE KIT V2.0 (TC375) LK7KFCF1"
-```
-
-In case of a simple example based on the [Bluewind blinky](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x-examples/tree/main/blinky) the output will look something like this:
-
-```
-> .\target\debug\tricore-probe.exe blinky.elf
-DEBUG power on reset
-└─ bw_r_drivers_tc37x::ssw::tc0::init_clock @ C:\Users\andra\.cargo\registry\src\github.com-d2f9efa20490c5c8\bw-r-drivers-tc37x-0.2.0\src\ssw\tc0.rs:12
-INFO  LED2 toggle
-└─ blinky::main @ src\main.rs:46
-```
-
-For more sample code refer to the Bluewind [bare-metal examples](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x-examples) and to the Veecle [PXROS examples](https://github.com/veecle/veecle-pxros/tree/main/examples).
-
 
 ## Linux
 
@@ -85,6 +44,7 @@ Please report any bugs or issues you encounter with the Linux setup only to this
 5. `libudev` library (`libudev-dev` on Ubuntu, `systemd-libs` on Fedora)
 
 ### Installation
+Clone the repository and place the DAS tool installer and AurixFlasher installer into the [tricore-docker](tricore-docker) directory.
 Build the docker container running the DAS tool, AurixFlasher and other utilities.
 
 **Note:**
@@ -99,6 +59,45 @@ Install `tricore-probe`:
 ```shell
 cargo install tricore-probe --git https://github.com/veecle/tricore-probe --version 0.2.0
 ```
+
+## Quickstart
+
+```
+> tricore-probe <your-executable>.elf --list-devices
+Found 1 devices:
+Device 0: "DAS JDS AURIX LITE KIT V2.0 (TC375) LK7KFCF1"
+```
+
+In case of a simple example based on the [Bluewind blinky](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x-examples/tree/main/blinky) the output will look something like this:
+
+```
+> tricore-probe blinky.elf
+DEBUG power on reset
+└─ bw_r_drivers_tc37x::ssw::tc0::init_clock @ C:\Users\andra\.cargo\registry\src\github.com-d2f9efa20490c5c8\bw-r-drivers-tc37x-0.2.0\src\ssw\tc0.rs:12
+INFO  LED2 toggle
+└─ blinky::main @ src\main.rs:46
+```
+
+For more sample code refer to the Bluewind [bare-metal examples](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x-examples) and to the Veecle [PXROS examples](https://github.com/veecle/veecle-pxros/tree/main/examples).
+
+## Cargo runner
+This program can be configured as a [runner](https://doc.rust-lang.org/cargo/reference/config.html#targettriplerunner).
+Check [`main.rs`](src/main.rs) for additional configuration options.
+
+A simple runner config for a TC375 lite kit could look like this:
+
+```toml
+[target.tc162-htc-none]
+runner = "tricore-probe"
+# The default dwarf version of the HighTec compiler is version 2 in v0.2.0
+# and version 3 in v1.0.0, both versions being incompatible with defmt location information.
+rustflags = ["-Z", "dwarf-version=4"]
+
+[build]
+target = "tc162-htc-none"
+```
+
+Then you can call `cargo run` in your project root which will run the built .elf on your board via `tricore-probe`.
 
 ## License
 
