@@ -60,6 +60,10 @@ Install `tricore-probe`:
 cargo install tricore-probe --git https://github.com/veecle/tricore-probe --version 0.2.0
 ```
 
+### Attribution
+
+The Linux setup is based on a modified version of the [`wineftd2xx` project](https://github.com/brentr/wineftd2xx) by [`brentr`](https://github.com/brentr).
+
 ## Quickstart
 
 ```
