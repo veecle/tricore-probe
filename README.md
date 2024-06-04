@@ -18,7 +18,7 @@ Currently only Windows and Linux are supported.
     Please make sure the `DAS_HOME` environment variable points to the DAS tool installation directory.
 2. [Infineon AURIX™ Flasher Software Tool](https://softwaretools.infineon.com/tools/com.ifx.tb.tool.aurixflashersoftwaretool)
    Please make sure the `AURIX_FLASHER_PATH` environment variable points to the AurixFlasher executable (`<your-path>\AURIXFlasher.exe`).
-3. [`defmt-print` CLI utility](https://crates.io/crates/defmt-print)
+3. [`defmt-print` CLI utility](https://crates.io/crates/defmt-print): `cargo install defmt-print`
 4. `objcopy` CLI utility (obtain e.g. as part of the [MinGW-w64](https://www.mingw-w64.org/) project)
 5. `addr2line` CLI utility (obtain e.g. as part of the [MinGW-w64](https://www.mingw-w64.org/) project)
 6. Rust toolchain
