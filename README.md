@@ -22,7 +22,7 @@ Currently only Windows and Linux are supported.
 4. `objcopy` CLI utility (obtain e.g. as part of the [MinGW-w64](https://www.mingw-w64.org/) project)
 5. `addr2line` CLI utility (obtain e.g. as part of the [MinGW-w64](https://www.mingw-w64.org/) project)
 6. Rust toolchain
-7. [LLVM](https://github.com/llvm/llvm-project/releases) (also set `LIBCLANG_PATH` to `<your-path>\LLVM\lib`)
+7. [bindgen requirements](https://rust-lang.github.io/rust-bindgen/requirements.html) 
 
 ### Installation
 Install `tricore-probe`:
