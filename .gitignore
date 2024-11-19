@@ -5,3 +5,5 @@ Cargo.lock
 .idea
 tricore-docker/DAS_V8_0_5_SETUP.exe
 tricore-docker/aurixflashersoftwaretool_1.0.10_Windows_x64.msi
+tricore-docker/DAS_V8_1_4_SETUP.exe
+tricore-docker/AURIXFlasherSoftwareTool-setup_3.0.0_20241030-1737.exe
