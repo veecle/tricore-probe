@@ -2,7 +2,7 @@
 
 # Use the official rust image with xwin (https://github.com/Jake-Shadle/xwin) as base.
 #
-FROM docker.io/library/rust:1.74.0-slim-bookworm as builder-base
+FROM docker.io/library/rust:1.74.0-slim-bookworm AS builder-base
 
 ENV KEYRINGS /usr/local/share/keyrings
 
