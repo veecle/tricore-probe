@@ -14,9 +14,9 @@ Currently only Windows and Linux are supported.
 
 ### Requirements
 
-1. [Infineon DAS tool version 8.0.5](https://www.infineon.com/cms/en/product/promopages/das/)
+1. [Infineon DAS tool version 8.1.4](https://www.infineon.com/cms/en/product/promopages/das/)
     Please make sure the `DAS_HOME` environment variable points to the DAS tool installation directory.
-2. [Infineon AURIX™ Flasher Software Tool](https://softwaretools.infineon.com/tools/com.ifx.tb.tool.aurixflashersoftwaretool)
+2. [Infineon AURIX™ Flasher Software Tool 3.0.0](https://softwaretools.infineon.com/tools/com.ifx.tb.tool.aurixflashersoftwaretool)
    Please make sure the `AURIX_FLASHER_PATH` environment variable points to the AurixFlasher executable (`<your-path>\AURIXFlasher.exe`).
 3. [`defmt-print` CLI utility](https://crates.io/crates/defmt-print): `cargo install defmt-print`
 4. `objcopy` CLI utility (obtain e.g. as part of the [MinGW-w64](https://www.mingw-w64.org/) project)
@@ -37,8 +37,8 @@ Please report any bugs or issues you encounter with the Linux setup only to this
 
 ### Requirements
 
-1. Place the [Infineon DAS tool version 8.0.5](https://www.infineon.com/cms/en/product/promopages/das/) installer (`DAS_V8_0_5_SETUP.exe`) in [tricore-docker](tricore-docker).
-2. Place the [Infineon AURIX™ Flasher Software Tool](https://softwaretools.infineon.com/tools/com.ifx.tb.tool.aurixflashersoftwaretool) installer (`aurixflashersoftwaretool_1.0.10_Windows_x64.msi`) in [tricore-docker](tricore-docker).
+1. Place the [Infineon DAS tool version 8.1.4](https://www.infineon.com/cms/en/product/promopages/das/) installer (`DAS_V8_1_4_SETUP.exe`) in [tricore-docker](tricore-docker).
+2. Place the [Infineon AURIX™ Flasher Software Tool 3.0.0](https://softwaretools.infineon.com/tools/com.ifx.tb.tool.aurixflashersoftwaretool) installer (`AURIXFlasherSoftwareTool-setup_3.0.0_20241030-1737.exe`) in [tricore-docker](tricore-docker).
 3. `objcopy` CLI utility
 4. Rust toolchain
 5. `libudev` library (`libudev-dev` on Ubuntu, `systemd-libs` on Fedora)

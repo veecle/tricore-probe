@@ -101,6 +101,17 @@ RUN cargo chef cook --release --target x86_64-pc-windows-msvc --recipe-path reci
 COPY . .
 RUN cargo build --release -p tricore-probe --target x86_64-pc-windows-msvc --features in_docker
 
+# Extract the AURIX flasher tool from the installer.
+FROM ubuntu:jammy AS extractor
+
+RUN apt-get update
+RUN apt-get install --no-install-recommends -y innoextract
+WORKDIR "/root"
+# Copy Aurix flasher setup.
+COPY ["tricore-docker/AURIXFlasherSoftwareTool-setup_3.0.0_20241030-1737.exe", "."]
+# Extract Aurix flasher.
+# This will extract to pwd/app.
+RUN innoextract AURIXFlasherSoftwareTool-setup_3.0.0_20241030-1737.exe
 
 FROM ubuntu:jammy AS runner
 
@@ -134,16 +145,14 @@ RUN if [ "${AGREE_INFINEON_TERMS}" -ne "1" ]; then echo "This installation ships
 
 WORKDIR "/root"
 # Copy DAS setup and install script.
-COPY ["tricore-docker/DAS_V8_0_5_SETUP.exe", "."]
-COPY ["tricore-docker/DAS_8_0_5_installer_script.qs", "."]
+COPY ["tricore-docker/DAS_V8_1_4_SETUP.exe", "."]
+COPY ["tricore-docker/DAS_V8_1_4_installer_script.qs", "."]
 
 # Install DAS, this will accept the DAS license agreement, notice and terms of use.
-RUN wine DAS_V8_0_5_SETUP.exe --script DAS_8_0_5_installer_script.qs -d --al
+RUN wine DAS_V8_1_4_SETUP.exe --script DAS_V8_1_4_installer_script.qs -d --al
 
-# Copy Aurix flasher setup.
-COPY ["tricore-docker/aurixflashersoftwaretool_1.0.10_Windows_x64.msi", "."]
-# Extract Aurix flasher.
-RUN msiextract -C /root/.wine/dosdevices/c:/Infineon/AURIXFlasherSoftwareTool aurixflashersoftwaretool_1.0.10_Windows_x64.msi
+COPY --from=extractor "root/app" "/root/.wine/dosdevices/c:/Infineon/AURIXFlasherSoftwareTool"
+
 # Install wine mono required for AurixFlasher.
 RUN wget -O ./wine-mono-9.1.0-x86.msi https://dl.winehq.org/wine/wine-mono/9.1.0/wine-mono-9.1.0-x86.msi
 RUN msiexec /i wine-mono-9.1.0-x86.msi
