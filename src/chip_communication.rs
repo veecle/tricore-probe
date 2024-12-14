@@ -21,6 +21,7 @@ pub struct DeviceSelection {
 pub struct ChipCommunication {
     device: Option<DeviceSelection>,
     scan_result: Option<Scan>,
+    cores: u8
 }
 
 impl ChipCommunication {
@@ -47,7 +48,7 @@ impl ChipCommunication {
         anyhow::Ok(())
     }
 
-    pub(crate) fn new() -> anyhow::Result<Self> {
+    pub(crate) fn new(cores: u8) -> anyhow::Result<Self> {
         log::debug!("Spawning DAS console.");
         std::thread::spawn(|| das::run_console().expect("Background process crashed."));
         // We need to wait a bit so that DAS is booted up correctly and sees
@@ -58,6 +59,7 @@ impl ChipCommunication {
         anyhow::Ok(Self {
             device: None,
             scan_result: None,
+            cores
         })
     }
 
@@ -96,9 +98,11 @@ impl ChipCommunication {
             .map(|core_index| system.get_core(core_index))
             .collect();
         let mut secondary_cores = secondary_cores?;
+        log::debug!("Secondary cores: {:#?}", secondary_cores);
         let HaltReason::DebugHit(halt_reason) = decode_rtt(
             &mut core,
             &mut secondary_cores,
+            self.cores,
             rtt_control_block_address,
             decoder,
         )?;
