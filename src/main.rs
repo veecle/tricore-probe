@@ -39,8 +39,8 @@ struct Args {
     elf: Option<PathBuf>,
 
     /// Number of active cores in application
-    #[arg(short, long, default_value_t = 1)]
-    cores: u8,
+    #[arg(short, long)]
+    cores: Option<u8>,
 
     /// Configures the log level.
     #[arg(short, long, value_enum, required = false, default_value_t = LogLevel::Warn)]
@@ -91,8 +91,10 @@ fn main() -> anyhow::Result<()> {
             tricore_args.push(device.clone());
         }
 
-        tricore_args.push("--cores".to_owned());
-        tricore_args.push(args.cores.to_string());
+        if let Some(cores) = args.cores {
+            tricore_args.push("--cores".to_owned());
+            tricore_args.push(cores.to_string());
+        }
 
         match args.log_level {
             LogLevel::Warn => tricore_args.push("--log-level=warn".to_owned()),
@@ -188,7 +190,7 @@ fn main() -> anyhow::Result<()> {
         use colored::Colorize;
         use defmt::DefmtDecoder;
 
-        let mut command_server = ChipCommunication::new(args.cores)?;
+        let mut command_server = ChipCommunication::new()?;
 
         if args.list_devices {
             let scanned_devices = command_server.list_devices()?;
@@ -220,10 +222,9 @@ fn main() -> anyhow::Result<()> {
 
         if let Some(elf) = args.elf {
             log::debug!("Elf file is {}", elf.display());
-            if args.no_flash  {
+            if args.no_flash {
                 log::warn!("Flashing skipped - this might lead to malformed defmt data!")
-            }
-            else {
+            } else {
                 command_server
                     .flash_elf(elf.as_path())
                     .context("Cannot flash elf file")?;
@@ -234,14 +235,14 @@ fn main() -> anyhow::Result<()> {
             let backtrace = command_server.read_rtt(
                 defmt_decoder.rtt_control_block_address(),
                 &mut defmt_decoder,
+                args.cores,
             )?;
 
             let backtrace_info = backtrace.addr2line(elf.as_path())?;
 
             println!("{}", "Device halted, backtrace as follows".red());
             backtrace_info.log_stdout();
-        }
-        else {
+        } else {
             log::warn!("Nothing to do here without elf")
         }
     }
