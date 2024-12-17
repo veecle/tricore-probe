@@ -10,7 +10,7 @@ impl Scan {
     /// Scans for all servers reported by the MCD library.
     pub fn new() -> anyhow::Result<Self> {
         log::debug!("Starting new scan");
-        let host = CStr::from_bytes_with_nul(b"localhost\0").unwrap();
+        let host = c"localhost";
         log::debug!("Created host");
         let server_count = MCD_LIB.query_server_count(host)?;
         log::debug!("Queried server count");

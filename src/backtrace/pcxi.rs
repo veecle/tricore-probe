@@ -43,7 +43,7 @@ pub struct ContextWalker<'a> {
     core: &'a Core<'a>,
 }
 
-impl<'a> Iterator for ContextWalker<'a> {
+impl Iterator for ContextWalker<'_> {
     type Item = SavedContext;
 
     fn next(&mut self) -> Option<Self::Item> {

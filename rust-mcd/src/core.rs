@@ -296,7 +296,7 @@ pub struct Trigger<'a> {
     trigger_id: u32,
 }
 
-impl<'a> Trigger<'a> {
+impl Trigger<'_> {
     pub fn get_state(&self) -> anyhow::Result<TriggerState> {
         let mut state_output = mcd_trig_state_st::default();
         let result = unsafe {

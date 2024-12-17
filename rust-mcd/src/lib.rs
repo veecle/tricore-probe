@@ -24,6 +24,7 @@ mod mcd_bindings {
     #![allow(non_camel_case_types)]
     #![allow(clippy::type_complexity)]
     #![allow(clippy::too_many_arguments)]
+    #![allow(clippy::doc_lazy_continuation)]
     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 }
 
