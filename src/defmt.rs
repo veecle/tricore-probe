@@ -115,6 +115,7 @@ impl Write for DefmtDecoder {
 pub fn decode_rtt<W: Write>(
     core: &mut Core<'_>,
     secondary_cores: &mut [Core<'_>],
+    active_cores: usize,
     rtt_block_address: u64,
     mut data_sink: W,
 ) -> anyhow::Result<HaltReason> {
@@ -161,6 +162,7 @@ pub fn decode_rtt<W: Write>(
     }
 
     core.write(rtt_block.flags_addr(), u32::to_le_bytes(2).to_vec())?; // Set the flag that the host is connected
+    log::debug!("Host connected");
 
     // Read the buffer parameters at startup, they should not change at runtime
     let ring_buffer = {
@@ -243,7 +245,14 @@ pub fn decode_rtt<W: Write>(
             return exit_reason.context("Cannot query state of the main core");
         }
 
-        for (secondary_index, core) in secondary_cores.iter_mut().enumerate() {
+        let secondary_active_cores = active_cores - 1;
+
+        // Only check for exit on active cores
+        for (secondary_index, core) in secondary_cores
+            .iter_mut()
+            .take(secondary_active_cores)
+            .enumerate()
+        {
             if let Some(exit_reason) = should_exit_for_core(core, true) {
                 if exit_reason.is_ok() {
                     // FIXME: The core index we give here might be misleading, we can probably obtain

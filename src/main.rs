@@ -36,7 +36,11 @@ struct Args {
 
     /// Path to the binary.
     #[arg(value_parser = existing_path)]
-    elf: PathBuf,
+    elf: Option<PathBuf>,
+
+    /// Number of active cores in application
+    #[arg(short, long)]
+    cores: Option<u8>,
 
     /// Configures the log level.
     #[arg(short, long, value_enum, required = false, default_value_t = LogLevel::Warn)]
@@ -71,8 +75,8 @@ fn main() -> anyhow::Result<()> {
         let command = docker_command
             .stderr(Stdio::inherit())
             .stdout(Stdio::inherit())
-            // "-t" is required for color output.
-            .args(["run", "--init", "--rm", "-t"]);
+            // "-t" is required for color output. -i to forward termination to the container
+            .args(["run", "--init", "--rm", "-t", "-i"]);
 
         let mut tricore_args = Vec::new();
         if args.no_flash {
@@ -87,6 +91,11 @@ fn main() -> anyhow::Result<()> {
             tricore_args.push(device.clone());
         }
 
+        if let Some(cores) = args.cores {
+            tricore_args.push("--cores".to_owned());
+            tricore_args.push(cores.to_string());
+        }
+
         match args.log_level {
             LogLevel::Warn => tricore_args.push("--log-level=warn".to_owned()),
             LogLevel::Info => tricore_args.push("--log-level=info".to_owned()),
@@ -94,41 +103,46 @@ fn main() -> anyhow::Result<()> {
             LogLevel::Trace => tricore_args.push("--log-level=trace".to_owned()),
         };
 
-        let temp_dir = if let Ok(absolute_path) = args.elf.canonicalize() {
-            let elf_content = fs::read(&absolute_path)
-                .context("Cannot load elf file")
-                .unwrap();
-            let ihex_content = elf_to_hex(&elf_content)
-                .context("Cannot convert elf to hex file")
-                .unwrap();
-            let temporary_directory =
-                TempDir::new().context("Failed to set up temporary directory")?;
-            let ihex_path = temporary_directory.path().join("output.hex");
-            fs::write(&ihex_path, ihex_content)
-                .context("Cannot create temporary hex file")
-                .unwrap();
+        let temp_dir = match args.elf {
+            Some(path) => {
+                if let Ok(absolute_path) = path.canonicalize() {
+                    let elf_content = fs::read(&absolute_path)
+                        .context("Cannot load elf file")
+                        .unwrap();
+                    let ihex_content = elf_to_hex(&elf_content)
+                        .context("Cannot convert elf to hex file")
+                        .unwrap();
+                    let temporary_directory =
+                        TempDir::new().context("Failed to set up temporary directory")?;
+                    let ihex_path = temporary_directory.path().join("output.hex");
+                    fs::write(&ihex_path, ihex_content)
+                        .context("Cannot create temporary hex file")
+                        .unwrap();
 
-            let elf_path_mount = format!(
-                "{}:{}",
-                ihex_path.as_path().to_str().unwrap(),
-                "/root/.wine/drive_c/output.hex"
-            );
-            println!("-v {}", elf_path_mount);
-            command.arg("-v").arg(elf_path_mount);
+                    let elf_path_mount = format!(
+                        "{}:{}",
+                        ihex_path.as_path().to_str().unwrap(),
+                        "/root/.wine/drive_c/output.hex"
+                    );
+                    println!("-v {}", elf_path_mount);
+                    command.arg("-v").arg(elf_path_mount);
 
-            let filename = absolute_path.file_name().unwrap().to_str().unwrap();
-            let file_path_in_docker_in_wine = format!("/root/.wine/drive_c/{}", filename);
-            let elf_path_mount = format!(
-                "{}:{}",
-                absolute_path.as_path().to_str().unwrap(),
-                file_path_in_docker_in_wine
-            );
-            println!("-v {}", elf_path_mount);
-            command.arg("-v").arg(elf_path_mount);
-            tricore_args.push(format!("C:\\{}", filename));
-            temporary_directory
-        } else {
-            bail!("File not working for some reason.");
+                    let filename = absolute_path.file_name().unwrap().to_str().unwrap();
+                    let file_path_in_docker_in_wine = format!("/root/.wine/drive_c/{}", filename);
+                    let elf_path_mount = format!(
+                        "{}:{}",
+                        absolute_path.as_path().to_str().unwrap(),
+                        file_path_in_docker_in_wine
+                    );
+                    println!("-v {}", elf_path_mount);
+                    command.arg("-v").arg(elf_path_mount);
+                    tricore_args.push(format!("C:\\{}", filename));
+                    Some(temporary_directory)
+                } else {
+                    None
+                }
+            }
+            None => None,
         };
 
         let mut daemon_command = "RUST_LOG=trace xvfb-run wine64 tricore-probe.exe".to_owned();
@@ -206,25 +220,31 @@ fn main() -> anyhow::Result<()> {
             command_server.connect(None)?;
         }
 
-        if !args.no_flash {
-            command_server
-                .flash_elf(args.elf.as_path())
-                .context("Cannot flash elf file")?;
+        if let Some(elf) = args.elf {
+            log::debug!("Elf file is {}", elf.display());
+            if args.no_flash {
+                log::warn!("Flashing skipped - this might lead to malformed defmt data!")
+            } else {
+                command_server
+                    .flash_elf(elf.as_path())
+                    .context("Cannot flash elf file")?;
+            }
+
+            let mut defmt_decoder = DefmtDecoder::spawn(elf.as_path())?;
+
+            let backtrace = command_server.read_rtt(
+                defmt_decoder.rtt_control_block_address(),
+                &mut defmt_decoder,
+                args.cores,
+            )?;
+
+            let backtrace_info = backtrace.addr2line(elf.as_path())?;
+
+            println!("{}", "Device halted, backtrace as follows".red());
+            backtrace_info.log_stdout();
         } else {
-            log::warn!("Flashing skipped - this might lead to malformed defmt data!")
+            log::warn!("Nothing to do here without elf")
         }
-
-        let mut defmt_decoder = DefmtDecoder::spawn(args.elf.as_path())?;
-
-        let backtrace = command_server.read_rtt(
-            defmt_decoder.rtt_control_block_address(),
-            &mut defmt_decoder,
-        )?;
-
-        let backtrace_info = backtrace.addr2line(args.elf.as_path())?;
-
-        println!("{}", "Device halted, backtrace as follows".red());
-        backtrace_info.log_stdout();
     }
     Ok(()) as Result<(), anyhow::Error>
 }

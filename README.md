@@ -57,7 +57,7 @@ docker build . --tag veecle/flash-tricore --build-arg=AGREE_INFINEON_TERMS=1 -f 
 
 Install `tricore-probe`:
 ```shell
-cargo install tricore-probe --git https://github.com/veecle/tricore-probe --version 0.2.0
+cargo install tricore-probe --git https://github.com/veecle/tricore-probe --version 0.2.1
 ```
 
 ### Attribution
@@ -67,7 +67,7 @@ The Linux setup is based on a modified version of the [`wineftd2xx` project](htt
 ## Quickstart
 
 ```
-> tricore-probe <your-executable>.elf --list-devices
+> tricore-probe --list-devices
 Found 1 devices:
 Device 0: "DAS JDS AURIX LITE KIT V2.0 (TC375) LK7KFCF1"
 ```
@@ -84,9 +84,18 @@ INFO  LED2 toggle
 
 For more sample code refer to the Bluewind [bare-metal examples](https://github.com/bluewind-embedded-systems/bw-r-drivers-tc37x-examples) and to the Veecle [PXROS examples](https://github.com/veecle/veecle-pxros/tree/main/examples).
 
+For applications not running on all the available cores, you can specify the number of active cores in the application with a CLI flag in order to prevent abrupt exit from the `rtt` session (by default, all of the cores available to the MCU are used):
+```
+> tricore-probe --cores <n> app.elf 
+```
+Note that this parameter only works for applications running on contiguous cores. For example, on a tri-core processor, with an application only starting `core0` and `core2`, this session will stop anyway:
+```
+> tricore-probe --cores 2 app.elf 
+```
+
 ## Cargo runner
 This program can be configured as a [runner](https://doc.rust-lang.org/cargo/reference/config.html#targettriplerunner).
-Check [`main.rs`](src/main.rs) for additional configuration options.
+Check [`main.rs`](src/main.rs) or run `tricore-probe --help` for additional configuration options.
 
 A simple runner config for a TC375 lite kit could look like this:
 

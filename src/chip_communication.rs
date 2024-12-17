@@ -55,6 +55,7 @@ impl ChipCommunication {
         std::thread::sleep(Duration::from_millis(800));
 
         rust_mcd::library::init();
+
         anyhow::Ok(Self {
             device: None,
             scan_result: None,
@@ -88,17 +89,25 @@ impl ChipCommunication {
         &mut self,
         rtt_control_block_address: u64,
         decoder: W,
+        active_cores: Option<u8>,
     ) -> anyhow::Result<Stacktrace> {
         let system = self.get_system()?;
         let core_count = system.core_count();
+        let active_cores = match active_cores {
+            Some(cores) => std::cmp::min(core_count, cores as usize),
+            None => core_count,
+        };
         let mut core = system.get_core(0)?;
+        log::debug!("Number of active cores: {}", active_cores);
         let secondary_cores: Result<Vec<_>, _> = (1..(core_count))
             .map(|core_index| system.get_core(core_index))
             .collect();
         let mut secondary_cores = secondary_cores?;
+        log::debug!("Secondary cores: {:#?}", secondary_cores);
         let HaltReason::DebugHit(halt_reason) = decode_rtt(
             &mut core,
             &mut secondary_cores,
+            active_cores,
             rtt_control_block_address,
             decoder,
         )?;
