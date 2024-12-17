@@ -280,7 +280,7 @@ pub trait StacktraceExt: Sized {
     fn read_current(&self) -> anyhow::Result<Stacktrace>;
 }
 
-impl<'a> StacktraceExt for Core<'a> {
+impl StacktraceExt for Core<'_> {
     fn read_current(&self) -> anyhow::Result<Stacktrace> {
         let groups = self.register_groups()?;
         let group = groups.get_group(0)?;

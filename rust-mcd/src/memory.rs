@@ -108,7 +108,7 @@ impl<'a> MemorySpace<'a> {
     }
 }
 
-impl<'a> Debug for MemorySpace<'a> {
+impl Debug for MemorySpace<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MemorySpace")
             .field("space_id", &self.inner.mem_space_id)
@@ -125,7 +125,7 @@ pub struct MemoryBlock<'a> {
     inner: mcd_memblock_st,
 }
 
-impl<'a> MemoryBlock<'a> {
+impl MemoryBlock<'_> {
     pub fn parent(&self) -> Option<u32> {
         if self.inner.parent_id == MCD_MEM_BLOCK_NOPARENT {
             None
@@ -142,7 +142,7 @@ impl<'a> MemoryBlock<'a> {
     }
 }
 
-impl<'a> Debug for MemoryBlock<'a> {
+impl Debug for MemoryBlock<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MemoryBlock")
             .field("block_id", &self.inner.mem_block_id)

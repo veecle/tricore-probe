@@ -35,7 +35,7 @@ pub struct ResetClass<'a> {
     core: &'a Core<'a>,
 }
 
-impl<'a> Debug for ResetClass<'a> {
+impl Debug for ResetClass<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ResetClass")
             .field("bit_set", &self.bit_set)

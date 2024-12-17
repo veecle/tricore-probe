@@ -157,7 +157,7 @@ pub struct Register<'a> {
     register: &'a mcd_register_info_st,
 }
 
-impl<'a> Register<'a> {
+impl Register<'_> {
     /// Returns the current value of the register in the target.
     pub fn read(&self) -> anyhow::Result<u32> {
         let data = self.core.read_bytes(self.register.addr.address, 4)?;
@@ -177,7 +177,7 @@ impl<'a> Register<'a> {
     }
 }
 
-impl<'a> Debug for Register<'a> {
+impl Debug for Register<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let value = self
             .read()
