@@ -27,7 +27,7 @@ Currently only Windows and Linux are supported.
 ### Installation
 Install `tricore-probe`:
 ```shell
-cargo install tricore-probe --git https://github.com/veecle/tricore-probe --version 0.2.0
+cargo install tricore-probe --git https://github.com/veecle/tricore-probe
 ```
 
 ## Linux
@@ -57,7 +57,7 @@ docker build . --tag veecle/flash-tricore --build-arg=AGREE_INFINEON_TERMS=1 -f 
 
 Install `tricore-probe`:
 ```shell
-cargo install tricore-probe --git https://github.com/veecle/tricore-probe --version 0.2.1
+cargo install tricore-probe --git https://github.com/veecle/tricore-probe
 ```
 
 ### Attribution
