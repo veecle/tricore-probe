@@ -73,7 +73,8 @@ ENV CFLAGS_x86_64_pc_windows_msvc="$CL_FLAGS" \
 RUN rustup target add x86_64-pc-windows-msvc
 
 # Use cargo-chef to enable caching of dependencies.
-RUN cargo install cargo-chef --locked
+# Note that versions after 0.1.68 require newer Rust toolchain than 1.74.0.
+RUN cargo install cargo-chef@0.1.68 --locked
 
 WORKDIR /cargo-bin
 
@@ -108,10 +109,10 @@ RUN apt-get update
 RUN apt-get install --no-install-recommends -y innoextract
 WORKDIR "/root"
 # Copy Aurix flasher setup.
-COPY ["tricore-docker/AURIXFlasherSoftwareTool-setup_3.0.0_20241030-1737.exe", "."]
+COPY ["tricore-docker/AURIXFlasherSoftwareTool-setup_3.0.2_20241218-1439.exe", "."]
 # Extract Aurix flasher.
 # This will extract to pwd/app.
-RUN innoextract AURIXFlasherSoftwareTool-setup_3.0.0_20241030-1737.exe
+RUN innoextract AURIXFlasherSoftwareTool-setup_3.0.2_20241218-1439.exe
 
 FROM ubuntu:jammy AS runner
 
@@ -185,5 +186,3 @@ ENV DAS_HOME="C:\\DAS64"
 ENV AURIX_FLASHER_PATH="C:\\Infineon\\AURIXFlasherSoftwareTool\\AURIXFlasher.exe"
 
 CMD ["bash"]
-
-
