@@ -2,7 +2,7 @@
 
 # Use the official rust image with xwin (https://github.com/Jake-Shadle/xwin) as base.
 #
-FROM docker.io/library/rust:1.74.0-slim-bookworm AS builder-base
+FROM docker.io/library/rust:1.85.0-slim-bookworm AS builder-base
 
 ENV KEYRINGS /usr/local/share/keyrings
 
@@ -73,8 +73,7 @@ ENV CFLAGS_x86_64_pc_windows_msvc="$CL_FLAGS" \
 RUN rustup target add x86_64-pc-windows-msvc
 
 # Use cargo-chef to enable caching of dependencies.
-# Note that versions after 0.1.68 require newer Rust toolchain than 1.74.0.
-RUN cargo install cargo-chef@0.1.68 --locked
+RUN cargo install cargo-chef@0.1.71 --locked
 
 WORKDIR /cargo-bin
 
