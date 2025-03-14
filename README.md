@@ -2,27 +2,25 @@
 
 `tricore-probe` is an effort to deploy and debug rust programs with little effort
 on Tricore chips. It uses publicly available Infineon tools to interface with the
-chips debug controller. As its name suggests, it is inspired by [`probe-run`](https://crates.io/crates/probe-run) and depends 
+chips debug controller. As its name suggests, it is inspired by [`probe-run`](https://crates.io/crates/probe-run) and depends
 on the [`defmt`](https://defmt.ferrous-systems.com/) framework to integrate seamlessly just as `probe-run` does.
 
 ### Platform support
-Currently only Windows and Linux are supported.
+Currently only [Windows](#windows-installation) and [Linux](#linux-installation) are supported.
 
-# Installation
-
-## Windows
+## Windows Installation
 
 ### Requirements
 
 1. [Infineon DAS tool version 8.1.4](https://www.infineon.com/cms/en/product/promopages/das/)
-    Please make sure the `DAS_HOME` environment variable points to the DAS tool installation directory.
+   Please make sure the `DAS_HOME` environment variable points to the DAS tool installation directory.
 2. [Infineon AURIX™ Flasher Software Tool 3.0.0](https://softwaretools.infineon.com/tools/com.ifx.tb.tool.aurixflashersoftwaretool)
    Please make sure the `AURIX_FLASHER_PATH` environment variable points to the AurixFlasher executable (`<your-path>\AURIXFlasher.exe`).
 3. [`defmt-print` CLI utility](https://crates.io/crates/defmt-print): `cargo install defmt-print`
 4. `objcopy` CLI utility (obtain e.g. as part of the [MinGW-w64](https://www.mingw-w64.org/) project)
 5. `addr2line` CLI utility (obtain e.g. as part of the [MinGW-w64](https://www.mingw-w64.org/) project)
 6. Rust toolchain
-7. [bindgen requirements](https://rust-lang.github.io/rust-bindgen/requirements.html) 
+7. [bindgen requirements](https://rust-lang.github.io/rust-bindgen/requirements.html)
 
 ### Installation
 Install `tricore-probe`:
@@ -30,7 +28,7 @@ Install `tricore-probe`:
 cargo install tricore-probe --git https://github.com/veecle/tricore-probe
 ```
 
-## Linux
+## Linux Installation
 
 The Linux setup is not officially supported by Infineon and thus might not work as expected.
 Please report any bugs or issues you encounter with the Linux setup only to this repository, not to Infineon.
