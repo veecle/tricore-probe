@@ -53,9 +53,9 @@ To use this setup, make sure you checked the terms and conditions of these progr
 docker build . --tag veecle/flash-tricore --build-arg=AGREE_INFINEON_TERMS=1 -f tricore-docker/Dockerfile
 ```
 
-Install `tricore-probe`:
+Install `tricore-probe` from the current directory.
 ```shell
-cargo install tricore-probe --git https://github.com/veecle/tricore-probe
+cargo install tricore-probe --path .
 ```
 
 ### Attribution
