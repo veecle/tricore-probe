@@ -108,10 +108,11 @@ RUN apt-get update
 RUN apt-get install --no-install-recommends -y innoextract
 WORKDIR "/root"
 # Copy Aurix flasher setup.
-COPY ["tricore-docker/AURIXFlasherSoftwareTool-setup_3.0.2_20241218-1439.exe", "."]
-# Extract Aurix flasher.
+COPY ["tricore-docker/AURIXFlasherSoftwareTool-setup_*.exe", "."]
+# Extract Aurix flasher, ensuring that we only copied one file.
 # This will extract to pwd/app.
-RUN innoextract AURIXFlasherSoftwareTool-setup_3.0.2_20241218-1439.exe
+RUN test "$(ls -1 AURIXFlasherSoftwareTool-setup_*.exe | wc -l)" -eq 1 || (echo "Expected exactly one AURIXFlasherSoftwareTool-setup_*.exe file in the ./tricore-docker directory" && exit 1) \
+    && innoextract AURIXFlasherSoftwareTool-setup_*.exe
 
 FROM ubuntu:jammy AS runner
 
